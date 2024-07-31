@@ -7,4 +7,7 @@ export const EnvConfiguration = () => ({
   db_host: process.env.DB_HOST,
   db_port: process.env.DB_PORT,
   db_username: process.env.DB_USERNAME,
+
+  sender_email: process.env.SENDER_EMAIL,
+  sender_email_password: process.env.SENDER_EMAIL_PASSWORD,
 });

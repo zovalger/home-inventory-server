@@ -29,6 +29,9 @@ export class User {
   // country: string;
   // image: string;
 
+  // @OneToMany(() => UserVerificationCode, (code) => code.user)
+  // verificationCode: UserVerificationCode[];
+
   @CreateDateColumn()
   createAt: string;
 

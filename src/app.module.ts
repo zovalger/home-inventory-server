@@ -5,6 +5,8 @@ import { EnvConfiguration } from './config/app.config';
 import { JoiValidationsSchema } from './config/joi.validation';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { CommonModule } from './common/common.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -25,7 +27,11 @@ import { AuthModule } from './auth/auth.module';
       synchronize: true,
     }),
 
+    EmailModule,
+
     AuthModule,
+
+    CommonModule,
   ],
   controllers: [],
   providers: [],

@@ -10,12 +10,17 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { User } from './entities/user.entity';
+import { EmailService } from 'src/email/email.service';
+import { UserVerificationCodeService } from './providers';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly userVerificationCodeService: UserVerificationCodeService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -28,6 +33,14 @@ export class AuthService {
 
     try {
       await this.userRepository.save(user);
+
+      const verificationCode =
+        await this.userVerificationCodeService.create(user);
+
+      await this.emailService.createUser({
+        user,
+        verificationCode,
+      });
 
       delete user.password;
 
@@ -46,6 +59,7 @@ export class AuthService {
   }
 
   update(id: number, updateAuthDto: UpdateAuthDto) {
+    updateAuthDto;
     return `This action updates a #${id} auth`;
   }
 

@@ -8,4 +8,6 @@ export const JoiValidationsSchema = Joi.object({
   DB_HOST: Joi.string().required(),
   DB_PORT: Joi.number().default(5432),
   DB_USERNAME: Joi.string().required(),
+  SENDER_EMAIL: Joi.string().email().required(),
+  SENDER_EMAIL_PASSWORD: Joi.string().required(),
 });

@@ -20,6 +20,8 @@ export class AuthController {
     return this.authService.create(createAuthDto);
   }
 
+  // todo: ruta para verificar usuario
+
   @Get()
   findAll() {
     return this.authService.findAll();

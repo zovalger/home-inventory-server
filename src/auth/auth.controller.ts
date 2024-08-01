@@ -1,8 +1,12 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { FormatEmailPipe } from './pipes/format-email/format-email.pipe';
+import { Auth } from './decorators/auth.decorator';
+import { GetUser } from './decorators/get-user.decorator';
+import { User } from './entities';
+import { VerificationCodeDto } from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -18,5 +22,30 @@ export class AuthController {
     return this.authService.login(loginUserDto);
   }
 
-  // todo: ruta para verificar usuario
+  @Get('profile')
+  @Auth({ withoutVerification: true })
+  profile(@GetUser() user: User) {
+    return user;
+  }
+
+  @Post('resend_code')
+  @Auth({ withoutVerification: true })
+  resendVerificationCode(@GetUser() user: User) {
+    return this.authService.resendVerificationCode(user);
+  }
+
+  @Post('verify')
+  @Auth({ withoutVerification: true })
+  verify(
+    @GetUser() user: User,
+    @Body() verificationCodeDto: VerificationCodeDto,
+  ) {
+    return this.authService.verify(user, verificationCodeDto);
+  }
+
+  @Patch('edit')
+  @Auth()
+  editUser() {
+    return 'edit';
+  }
 }

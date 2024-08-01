@@ -6,16 +6,19 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
-import { CreateUserDto } from './dto/create-user.dto';
-import { User } from './entities/user.entity';
 import { EmailService } from 'src/email/email.service';
-import { UserVerificationCode } from './entities';
-import { CreateUserVerificationCodeDto } from './dto/create-user-verification-code.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { JwtService } from '@nestjs/jwt';
+import { UserVerificationCode, User } from './entities';
 import { JwtPayload } from './interface';
+import {
+  CreateUserDto,
+  VerificationCodeDto,
+  LoginUserDto,
+  CreateUserVerificationCodeDto,
+} from './dto';
+import { ResMessages } from 'src/config/res-messages';
 
 @Injectable()
 export class AuthService {
@@ -92,10 +95,95 @@ export class AuthService {
     return { token: this.getJwtToken({ id: user.id }) };
   }
 
+  async resendVerificationCode(user: User) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const verificationCode = await queryRunner.manager.create(
+        UserVerificationCode,
+        this.generateVerificationCodeObject(user),
+      );
+
+      await queryRunner.manager.save(verificationCode);
+
+      await this.emailService.sendEmail_CreateUser({
+        user,
+        verificationCode,
+      });
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return {
+        message: `forwarded verification code to email ${user.email}`,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+
+      this.handleDBError(error);
+    }
+  }
+
+  async verify(user: User, verificationCodeDto: VerificationCodeDto) {
+    const { code } = verificationCodeDto;
+
+    if (user.isVerified)
+      throw new BadRequestException(ResMessages.UserAlreadyVerified);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const userVerificationCode = await this.userCodeVerificationRepository
+        .createQueryBuilder()
+        .where('"userId"=:userId and code=:code', { userId: user.id, code })
+        .getOne();
+
+      if (!userVerificationCode)
+        throw new NotFoundException("Verification  code isn't not exits");
+
+      if (userVerificationCode.isUsed)
+        throw new BadRequestException('Verification code is already used');
+
+      const expireDate = new Date(userVerificationCode.expireIn).getTime();
+
+      if (Date.now() > expireDate)
+        throw new BadRequestException('Verification code is expired');
+
+      userVerificationCode.isUsed = true;
+      user.isVerified = true;
+
+      await queryRunner.manager.save(User, user);
+      await queryRunner.manager.save(
+        UserVerificationCode,
+        userVerificationCode,
+      );
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return { message: 'User verificated' };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+
+      this.handleDBError(error);
+    }
+  }
+
+  // utils
+
   private generateVerificationCodeObject(
     user: User,
   ): CreateUserVerificationCodeDto {
     const expireIn = new Date(Date.now() + 1800000).toISOString();
+
+    console.log(expireIn);
 
     const code = [];
 
@@ -121,6 +209,8 @@ export class AuthService {
   handleDBError(error: any) {
     if (error.code == '23505')
       throw new BadRequestException('The user is already register');
+
+    if (error.status == 404) throw new NotFoundException(error.response);
 
     console.log(error);
     throw new InternalServerErrorException('Check server logs');

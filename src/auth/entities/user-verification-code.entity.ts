@@ -16,7 +16,7 @@ export class UserVerificationCode {
   @Column('text', { nullable: false })
   code: string;
 
-  @Column('date', { nullable: false })
+  @Column('timestamp', { nullable: false })
   expireIn: string;
 
   @Column('bool', { default: false, nullable: false })

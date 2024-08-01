@@ -10,13 +10,11 @@ export class EmailService {
     private readonly emailTemplates: EmailTemplates,
   ) {}
 
-  async createUser(createUserEmailDto: CreateUserEmailDto) {
+  async sendEmail_CreateUser(createUserEmailDto: CreateUserEmailDto) {
     const { user } = createUserEmailDto;
 
     const html = this.emailTemplates.createUser(createUserEmailDto);
 
     await this.emailSender.send(user.email, 'User register', html);
-
-    return 'This action adds a new email';
   }
 }

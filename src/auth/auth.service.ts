@@ -2,69 +2,120 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { User } from './entities/user.entity';
 import { EmailService } from 'src/email/email.service';
-import { UserVerificationCodeService } from './providers';
+import { UserVerificationCode } from './entities';
+import { CreateUserVerificationCodeDto } from './dto/create-user-verification-code.dto';
+import { LoginUserDto } from './dto/login-user.dto';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from './interface';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-
-    private readonly userVerificationCodeService: UserVerificationCodeService,
+    @InjectRepository(UserVerificationCode)
+    private readonly userCodeVerificationRepository: Repository<UserVerificationCode>,
+    private readonly dataSource: DataSource,
+    private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { password, ...userData } = createUserDto;
+    const { password, ...restUserData } = createUserDto;
 
-    const user = this.userRepository.create({
-      ...userData,
+    const userData = {
+      ...restUserData,
       password: bcrypt.hashSync(password, 10),
-    });
+    };
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      await this.userRepository.save(user);
+      const user = await queryRunner.manager.create(User, userData);
 
-      const verificationCode =
-        await this.userVerificationCodeService.create(user);
+      await queryRunner.manager.save(user);
 
-      await this.emailService.createUser({
+      const verificationCode = await queryRunner.manager.create(
+        UserVerificationCode,
+        this.generateVerificationCodeObject(user),
+      );
+
+      await queryRunner.manager.save(verificationCode);
+
+      await this.emailService.sendEmail_CreateUser({
         user,
         verificationCode,
       });
 
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
       delete user.password;
 
-      return user;
+      return {
+        message: 'User registered successfully',
+        data: user,
+        token: this.getJwtToken({ id: user.id }),
+      };
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+
       this.handleDBError(error);
     }
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  async login(loginUserDto: LoginUserDto) {
+    const { email, password } = loginUserDto;
+
+    const user = await this.userRepository.findOne({
+      where: { email },
+      select: { id: true, email: true, password: true },
+    });
+
+    if (!user) throw new NotFoundException('User or password incorrect');
+
+    if (!bcrypt.compareSync(password, user.password))
+      throw new NotFoundException('User or password incorrect');
+
+    return { token: this.getJwtToken({ id: user.id }) };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  private generateVerificationCodeObject(
+    user: User,
+  ): CreateUserVerificationCodeDto {
+    const expireIn = new Date(Date.now() + 1800000).toISOString();
+
+    const code = [];
+
+    for (let index = 0; index < 4; index++) {
+      const num = Math.round(Math.random() * 9);
+
+      code.push(num);
+    }
+
+    return {
+      user,
+      code: code.join(''),
+      expireIn,
+    };
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    updateAuthDto;
-    return `This action updates a #${id} auth`;
-  }
+  private getJwtToken(jwtPayload: JwtPayload) {
+    const token = this.jwtService.sign(jwtPayload);
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    return token;
   }
 
   handleDBError(error: any) {

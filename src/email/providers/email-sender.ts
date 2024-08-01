@@ -22,7 +22,7 @@ export class EmailSender {
       html,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Correo electrónico enviado: ', info);
+    // const info =
+    await transporter.sendMail(mailOptions);
   }
 }

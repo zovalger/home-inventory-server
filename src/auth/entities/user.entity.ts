@@ -1,4 +1,5 @@
 import {
+  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
@@ -29,12 +30,23 @@ export class User {
   // country: string;
   // image: string;
 
-  // @OneToMany(() => UserVerificationCode, (code) => code.user)
-  // verificationCode: UserVerificationCode[];
+  @Column('bool', { default: true, nullable: false })
+  isActive: boolean;
+
+  @Column('bool', { default: false, nullable: false })
+  isVerified: boolean;
+
+  @Column('text', { array: true, default: ['user'] })
+  roles: string[];
 
   @CreateDateColumn()
   createAt: string;
 
   @UpdateDateColumn()
   updateAt: string;
+
+  @BeforeInsert()
+  lowerCaseEmail() {
+    this.email = this.email.toLocaleLowerCase();
+  }
 }

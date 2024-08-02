@@ -1,21 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { CloudinaryService } from './cloudinary/cloudinary.service';
+import { User } from 'src/auth/entities';
+import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { File } from './entities';
 
 @Injectable()
 export class FilesService {
-  async upload(file: Express.Multer.File) {
-    // const resizeImage = await sharp(file.buffer)
-    //   .resize({
-    //     height: 320,
-    //     width: 320,
-    //     fit: 'contain',
-    //   })
-    //   .webp()
-    //   .toBuffer();
+  constructor(
+    private readonly cloudinaryService: CloudinaryService,
+    @InjectRepository(File)
+    private readonly fileRepository: Repository<File>,
+    private readonly dataSource: DataSource,
+  ) {}
 
-    // console.log(file);
+  async upload(user: User, fileToUpload: Express.Multer.File) {
+    const { public_id, secure_url } =
+      await this.cloudinaryService.uploadFile(fileToUpload);
 
-    // console.log(resizeImage);
+    const file = this.fileRepository.create({
+      createBy: user,
+      type: 'image',
+      serviceId: public_id,
+      url: secure_url,
+    });
 
-    return 'This action adds a new file';
+    await this.fileRepository.save(file);
+
+    return file;
   }
 }

@@ -23,7 +23,7 @@ export class File {
   url: string;
 
   @ManyToOne(() => User, (user) => user.id)
-  createBy: string;
+  createBy: User;
 
   @CreateDateColumn()
   createAt: string;

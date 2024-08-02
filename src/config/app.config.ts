@@ -10,4 +10,8 @@ export const EnvConfiguration = () => ({
 
   sender_email: process.env.SENDER_EMAIL,
   sender_email_password: process.env.SENDER_EMAIL_PASSWORD,
+
+  cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
+  cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET,
 });

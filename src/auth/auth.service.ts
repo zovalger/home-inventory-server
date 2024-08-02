@@ -145,7 +145,7 @@ export class AuthService {
         .getOne();
 
       if (!userVerificationCode)
-        throw new NotFoundException("Verification  code isn't not exits");
+        throw new NotFoundException("Verification code isn't not exits");
 
       if (userVerificationCode.isUsed)
         throw new BadRequestException('Verification code is already used');
@@ -182,8 +182,6 @@ export class AuthService {
     user: User,
   ): CreateUserVerificationCodeDto {
     const expireIn = new Date(Date.now() + 1800000).toISOString();
-
-    console.log(expireIn);
 
     const code = [];
 

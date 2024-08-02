@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { EmailModule } from './email/email.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -32,6 +33,8 @@ import { EmailModule } from './email/email.module';
     AuthModule,
 
     CommonModule,
+
+    FilesModule,
   ],
   controllers: [],
   providers: [],

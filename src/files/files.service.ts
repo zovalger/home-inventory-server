@@ -4,6 +4,7 @@ import { User } from 'src/auth/entities';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { File } from './entities';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class FilesService {
@@ -27,6 +28,18 @@ export class FilesService {
 
     await this.fileRepository.save(file);
 
+    return { url: file.url };
+  }
+
+  async getImage(term: string): Promise<File> {
+    const file = isUUID(term)
+      ? await this.fileRepository.findOneBy({ id: term })
+      : await this.fileRepository.findOneBy({ url: term });
+
     return file;
+  }
+
+  async deleteImage(id: string) {
+    await this.fileRepository.delete({ id });
   }
 }

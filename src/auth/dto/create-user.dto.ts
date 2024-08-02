@@ -4,8 +4,7 @@ import {
   IsOptional,
   IsEmail,
   IsStrongPassword,
-  IsInt,
-  IsPositive,
+  IsDateString,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -16,7 +15,7 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   @MinLength(1)
-  lastName: string;
+  lastName?: string;
 
   @IsEmail()
   email: string;
@@ -31,10 +30,11 @@ export class CreateUserDto {
   )
   password: string;
 
-  @IsInt()
-  @IsPositive()
-  age: number;
+  @IsOptional()
+  @IsDateString()
+  birthday?: string;
 
   //todo: aceptar country
-  // todo: aceptar imagen
+  // @IsInt()
+  // country: number;
 }

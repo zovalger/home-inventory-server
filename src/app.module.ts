@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { EmailModule } from './email/email.module';
 import { FilesModule } from './files/files.module';
+import { FamilyModule } from './family/family.module';
 
 @Module({
   imports: [
@@ -35,6 +36,8 @@ import { FilesModule } from './files/files.module';
     CommonModule,
 
     FilesModule,
+
+    FamilyModule,
   ],
   controllers: [],
   providers: [],

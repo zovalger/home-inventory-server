@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { FilesService } from './files.service';
@@ -8,7 +8,11 @@ import { File } from './entities';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [AuthModule, CloudinaryModule, TypeOrmModule.forFeature([File])],
+  imports: [
+    forwardRef(() => AuthModule),
+    CloudinaryModule,
+    TypeOrmModule.forFeature([File]),
+  ],
   controllers: [FilesController],
   providers: [FilesService],
   exports: [TypeOrmModule, FilesService],

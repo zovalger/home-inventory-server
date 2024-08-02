@@ -19,14 +19,20 @@ import {
   CreateUserVerificationCodeDto,
 } from './dto';
 import { ResMessages } from 'src/config/res-messages';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { FilesService } from 'src/files/files.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
     @InjectRepository(UserVerificationCode)
     private readonly userCodeVerificationRepository: Repository<UserVerificationCode>,
+
+    private readonly filesService: FilesService,
+
     private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
@@ -78,6 +84,32 @@ export class AuthService {
       this.handleDBError(error);
     }
   }
+  // todo: hacer validacion al cambiar de email
+  // enviar correo de confirmacion para cambiarlo
+
+  async updateUser(user: User, updateUserDto: UpdateUserDto) {
+    const { image: oldImage } = user;
+    const { image, password, ...toUpdate } = updateUserDto;
+
+    const imageFile = image
+      ? await this.filesService.getImage(image)
+      : undefined;
+
+    const newData = {
+      id: user.id,
+      ...toUpdate,
+      image: imageFile,
+      password: password ? bcrypt.hashSync(password, 10) : undefined,
+    };
+
+    await this.userRepository.save(newData);
+
+    if (image && oldImage) await this.filesService.deleteImage(oldImage.id);
+
+    const updatedUser = await this.userRepository.findOneBy({ id: user.id });
+
+    return this.profile(updatedUser);
+  }
 
   async login(loginUserDto: LoginUserDto) {
     const { email, password } = loginUserDto;
@@ -93,6 +125,12 @@ export class AuthService {
       throw new NotFoundException('User or password incorrect');
 
     return { token: this.getJwtToken({ id: user.id }) };
+  }
+
+  async profile(user: User) {
+    const { image, ...userData } = user;
+
+    return { ...userData, image: image?.url || null };
   }
 
   async resendVerificationCode(user: User) {
@@ -176,7 +214,7 @@ export class AuthService {
     }
   }
 
-  // utils
+  // **************** utils ****************
 
   private generateVerificationCodeObject(
     user: User,

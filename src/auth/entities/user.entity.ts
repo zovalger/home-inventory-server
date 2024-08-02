@@ -1,8 +1,13 @@
+import { Family } from 'src/family/entities';
+import { File } from 'src/files/entities';
 import {
   BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -24,11 +29,8 @@ export class User {
   @Column('text', { nullable: false, select: false })
   password: string;
 
-  @Column('int', { nullable: false })
-  age: number;
-
-  // country: string;
-  // image: string;
+  @Column('date', { nullable: true })
+  birthday: string;
 
   @Column('bool', { default: true, nullable: false })
   isActive: boolean;
@@ -38,6 +40,18 @@ export class User {
 
   @Column('text', { array: true, default: ['user'] })
   roles: string[];
+
+  @ManyToOne(() => Family, (family) => family.id)
+  family: Family;
+
+  // @ManyToOne(() => Country, (country) => country.id, { eager: true })
+  // country: Country;
+
+  @OneToOne(() => File, { eager: true, cascade: true })
+  @JoinColumn({
+    name: 'image',
+  })
+  image: File;
 
   @CreateDateColumn()
   createAt: string;

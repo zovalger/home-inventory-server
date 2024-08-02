@@ -7,6 +7,7 @@ import { Auth } from './decorators/auth.decorator';
 import { GetUser } from './decorators/get-user.decorator';
 import { User } from './entities';
 import { VerificationCodeDto } from './dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -25,7 +26,7 @@ export class AuthController {
   @Get('profile')
   @Auth({ withoutVerification: true })
   profile(@GetUser() user: User) {
-    return user;
+    return this.authService.profile(user);
   }
 
   @Post('resend_code')
@@ -45,7 +46,7 @@ export class AuthController {
 
   @Patch('edit')
   @Auth()
-  editUser() {
-    return 'edit';
+  editUser(@GetUser() user: User, @Body() updateUserDto: UpdateUserDto) {
+    return this.authService.updateUser(user, updateUserDto);
   }
 }

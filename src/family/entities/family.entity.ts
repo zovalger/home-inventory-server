@@ -1,5 +1,3 @@
-import { User } from 'src/auth/entities';
-import { File } from 'src/files/entities';
 import {
   Column,
   CreateDateColumn,
@@ -12,12 +10,16 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import { User } from 'src/auth/entities';
+import { File } from 'src/files/entities';
+import { FamilyMember } from './family-member.entity';
+
 @Entity('family')
 export class Family {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('text', { default: 'free' })
+  @Column('text', { default: 'free', nullable: false })
   tier: string;
 
   @Column('text', { nullable: false })
@@ -27,10 +29,10 @@ export class Family {
   @JoinColumn({
     name: 'image',
   })
-  image: File;
+  image?: File;
 
-  @OneToMany(() => User, (user) => user.family)
-  members: User[];
+  @OneToMany(() => FamilyMember, (familyMember) => familyMember.family)
+  members: FamilyMember[];
 
   @ManyToOne(() => User, (user) => user.id, { nullable: false })
   createBy: User;

@@ -1,5 +1,3 @@
-import { Family } from 'src/family/entities';
-import { File } from 'src/files/entities';
 import {
   BeforeInsert,
   Column,
@@ -11,6 +9,9 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { File } from 'src/files/entities';
+import { FamilyMember } from 'src/family/entities';
 
 @Entity('user')
 export class User {
@@ -41,8 +42,8 @@ export class User {
   @Column('text', { array: true, default: ['user'] })
   roles: string[];
 
-  @ManyToOne(() => Family, (family) => family.id)
-  family: Family;
+  @ManyToOne(() => FamilyMember, (familyMember) => familyMember.user)
+  family: FamilyMember[];
 
   // @ManyToOne(() => Country, (country) => country.id, { eager: true })
   // country: Country;

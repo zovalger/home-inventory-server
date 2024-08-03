@@ -25,17 +25,21 @@ export class Family {
   @Column('text', { nullable: false })
   name: string;
 
-  @OneToOne(() => File, { eager: true, cascade: true })
-  @JoinColumn({
-    name: 'image',
-  })
+  @Column('text', { nullable: false })
+  createById: string;
+
+  @Column('text', { nullable: true })
+  imageUrl: string;
+
+  @ManyToOne(() => User, (user) => user.id, { nullable: false })
+  createBy: User;
+
+  @OneToOne(() => File, { cascade: true })
+  @JoinColumn({ referencedColumnName: 'url' })
   image?: File;
 
   @OneToMany(() => FamilyMember, (familyMember) => familyMember.family)
   members: FamilyMember[];
-
-  @ManyToOne(() => User, (user) => user.id, { nullable: false })
-  createBy: User;
 
   @CreateDateColumn()
   createAt: string;

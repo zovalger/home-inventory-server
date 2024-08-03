@@ -22,6 +22,9 @@ export class File {
   @Column('text', { nullable: false, unique: true })
   url: string;
 
+  @Column('text', { nullable: false })
+  createById: string;
+
   @ManyToOne(() => User, (user) => user.id)
   createBy: User;
 

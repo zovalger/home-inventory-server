@@ -4,7 +4,7 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -42,17 +42,20 @@ export class User {
   @Column('text', { array: true, default: ['user'] })
   roles: string[];
 
-  @ManyToOne(() => FamilyMember, (familyMember) => familyMember.user)
+  @Column('text', { nullable: true })
+  imageUrl: string;
+
+  @OneToOne(() => File, { cascade: true })
+  @JoinColumn({
+    referencedColumnName: 'url',
+  })
+  image: File;
+
+  @OneToMany(() => FamilyMember, (familyMember) => familyMember.user)
   family: FamilyMember[];
 
   // @ManyToOne(() => Country, (country) => country.id, { eager: true })
   // country: Country;
-
-  @OneToOne(() => File, { eager: true, cascade: true })
-  @JoinColumn({
-    name: 'image',
-  })
-  image: File;
 
   @CreateDateColumn()
   createAt: string;

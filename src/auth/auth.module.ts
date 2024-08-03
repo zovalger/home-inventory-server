@@ -11,6 +11,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { FilesModule } from 'src/files/files.module';
+import { FamilyModule } from 'src/family/family.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { FilesModule } from 'src/files/files.module';
     }),
 
     forwardRef(() => FilesModule),
+    forwardRef(() => FamilyModule),
 
     EmailModule,
   ],

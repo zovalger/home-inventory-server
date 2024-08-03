@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { User } from 'src/auth/entities';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { File } from './entities';
 import { isUUID } from 'class-validator';
@@ -39,7 +39,16 @@ export class FilesService {
     return file;
   }
 
-  async deleteImage(id: string) {
-    await this.fileRepository.delete({ id });
+  async existImageInDB(url: string): Promise<boolean> {
+    return !!(await this.fileRepository.countBy({ url }));
+  }
+  async deleteImage(term: string) {
+    const file = await this.getImage(term);
+
+    if (file) await this.fileRepository.delete(file);
+  }
+
+  async deleteImageByQueryRunner(queryRunner: QueryRunner, url: string) {
+    queryRunner.manager.delete(File, { url });
   }
 }

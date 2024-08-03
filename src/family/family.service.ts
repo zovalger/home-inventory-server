@@ -12,6 +12,7 @@ import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FilesService } from 'src/files/files.service';
 import { FamilyRoles } from './interfaces';
+import { ResMessages } from 'src/config/res-messages';
 
 @Injectable()
 export class FamilyService {
@@ -26,20 +27,19 @@ export class FamilyService {
   ) {}
 
   async create(user: User, createFamilyDto: CreateFamilyDto) {
-    const member = await this.familyMemberRepository
-      .createQueryBuilder()
-      .where('"userId"=:userId', { userId: user.id })
-      .getOne();
+    const { imageUrl } = createFamilyDto;
 
-    if (member)
+    const isMemberOfOneFamily = !!(await this.familyMemberRepository.countBy({
+      userId: user.id,
+    }));
+
+    if (isMemberOfOneFamily)
       throw new BadRequestException('The user already has a family group');
 
-    if (!createFamilyDto.name)
-      createFamilyDto.name = user.lastName ? user.lastName : user.name;
-
-    const imageFile = createFamilyDto.image
-      ? await this.filesService.getImage(createFamilyDto.image)
-      : undefined;
+    if (imageUrl) {
+      const existImage = await this.filesService.existImageInDB(imageUrl);
+      if (!existImage) throw new BadRequestException(ResMessages.ImageNotFound);
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
 
@@ -47,17 +47,13 @@ export class FamilyService {
     await queryRunner.startTransaction();
 
     try {
-      // todo: crear familia
-
       const family = this.familyRepository.create({
         ...createFamilyDto,
-        createBy: user,
-        image: imageFile,
+        createById: user.id,
       });
 
       await queryRunner.manager.save(family);
 
-      // todo: crear miembro ouwner
       const member = this.familyMemberRepository.create({
         family,
         user,
@@ -85,28 +81,57 @@ export class FamilyService {
         relations: { members: { user: true } },
       });
 
+      if (!family)
+        throw new NotFoundException("The user haven't a family group");
+
       return family;
     } catch (error) {
       this.handleDBError(error);
     }
   }
 
-  async update(id: string, updateFamilyDto: UpdateFamilyDto, user: User) {
-    const imageFile = updateFamilyDto.image
-      ? await this.filesService.getImage(updateFamilyDto.image)
-      : undefined;
+  async update(id: string, updateFamilyDto: UpdateFamilyDto) {
+    const { imageUrl, name } = updateFamilyDto;
+
+    if (imageUrl) {
+      const existImage = await this.filesService.existImageInDB(imageUrl);
+      if (!existImage) throw new BadRequestException(ResMessages.ImageNotFound);
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      const family = await this.familyRepository.preload({
+      const family = await this.familyRepository.findOneBy({
         id,
-        ...updateFamilyDto,
-        image: imageFile,
       });
 
-      await this.familyRepository.save(family);
+      if (!family) throw new NotFoundException(ResMessages.familyNotFound);
+
+      const { imageUrl: oldImageUrl } = family;
+
+      family.imageUrl = imageUrl != undefined ? imageUrl : oldImageUrl;
+
+      if (name) family.name = name;
+
+      await queryRunner.manager.save(family);
+
+      if (imageUrl != undefined && oldImageUrl && imageUrl != oldImageUrl)
+        await this.filesService.deleteImageByQueryRunner(
+          queryRunner,
+          oldImageUrl,
+        );
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
 
       return family;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+
       this.handleDBError(error);
     }
   }

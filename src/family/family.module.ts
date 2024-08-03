@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { FamilyService } from './family.service';
 import { FamilyController } from './family.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,8 +8,8 @@ import { FilesModule } from 'src/files/files.module';
 
 @Module({
   imports: [
-    AuthModule,
-    FilesModule,
+    forwardRef(() => AuthModule),
+    forwardRef(() => FilesModule),
     TypeOrmModule.forFeature([Family, FamilyMember]),
   ],
   controllers: [FamilyController],

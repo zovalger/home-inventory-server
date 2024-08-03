@@ -88,27 +88,34 @@ export class AuthService {
   // enviar correo de confirmacion para cambiarlo
 
   async updateUser(user: User, updateUserDto: UpdateUserDto) {
-    const { image: oldImage } = user;
-    const { image, password, ...toUpdate } = updateUserDto;
+    const { imageUrl: oldImageUrl } = user;
+    const { imageUrl, password } = updateUserDto;
 
-    const imageFile = image
-      ? await this.filesService.getImage(image)
-      : undefined;
+    if (imageUrl) {
+      if (imageUrl == oldImageUrl) delete updateUserDto.imageUrl;
+      else {
+        const existImage = await this.filesService.existImageInDB(imageUrl);
 
-    const newData = {
+        if (!existImage)
+          throw new BadRequestException(ResMessages.ImageNotFound);
+      }
+    }
+
+    if (password) {
+      updateUserDto.password = bcrypt.hashSync(password, 10);
+    }
+
+    const saved = await this.userRepository.preload({
       id: user.id,
-      ...toUpdate,
-      image: imageFile,
-      password: password ? bcrypt.hashSync(password, 10) : undefined,
-    };
+      ...updateUserDto,
+    });
 
-    await this.userRepository.save(newData);
+    await this.userRepository.save(saved);
 
-    if (image && oldImage) await this.filesService.deleteImage(oldImage.id);
+    if (updateUserDto.imageUrl && oldImageUrl)
+      await this.filesService.deleteImage(oldImageUrl);
 
-    const updatedUser = await this.userRepository.findOneBy({ id: user.id });
-
-    return this.profile(updatedUser);
+    return saved;
   }
 
   async login(loginUserDto: LoginUserDto) {
@@ -128,9 +135,7 @@ export class AuthService {
   }
 
   async profile(user: User) {
-    const { image, ...userData } = user;
-
-    return { ...userData, image: image?.url || null };
+    return user;
   }
 
   async resendVerificationCode(user: User) {

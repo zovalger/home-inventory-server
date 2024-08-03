@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Family } from './family.entity';
 import { User } from 'src/auth/entities';
+import { FamilyRoles } from '../interfaces';
 
 @Entity('family_member')
 export class FamilyMember {
@@ -20,5 +21,5 @@ export class FamilyMember {
   user: User;
 
   @Column('text', { nullable: false })
-  role: string;
+  role: FamilyRoles;
 }

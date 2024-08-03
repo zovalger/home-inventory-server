@@ -6,5 +6,5 @@ import { CreateUserDto } from './create-user.dto';
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   @IsUrl()
-  image?: string;
+  imageUrl?: string;
 }

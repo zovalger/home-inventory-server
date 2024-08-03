@@ -6,10 +6,12 @@ import { FilesController } from './files.controller';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { File } from './entities';
 import { AuthModule } from 'src/auth/auth.module';
+import { FamilyModule } from 'src/family/family.module';
 
 @Module({
   imports: [
     forwardRef(() => AuthModule),
+    forwardRef(() => FamilyModule),
     CloudinaryModule,
     TypeOrmModule.forFeature([File]),
   ],

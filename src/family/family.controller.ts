@@ -8,6 +8,7 @@ import { User } from 'src/auth/entities';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { FamilyRoles } from './interfaces';
 import { GetFamily } from './decorators/get-family.decorator';
+import { Family } from './entities';
 
 @Controller('family')
 export class FamilyController {
@@ -21,8 +22,8 @@ export class FamilyController {
 
   @Get()
   @Auth()
-  myFamily(@GetUser() user: User) {
-    return this.familyService.myFamily(user);
+  myFamily(@GetFamily() family: Family) {
+    return family;
   }
 
   @Patch()

@@ -91,31 +91,47 @@ export class AuthService {
     const { imageUrl: oldImageUrl } = user;
     const { imageUrl, password } = updateUserDto;
 
-    if (imageUrl) {
-      if (imageUrl == oldImageUrl) delete updateUserDto.imageUrl;
-      else {
-        const existImage = await this.filesService.existImageInDB(imageUrl);
-
-        if (!existImage)
-          throw new BadRequestException(ResMessages.ImageNotFound);
-      }
-    }
-
     if (password) {
       updateUserDto.password = bcrypt.hashSync(password, 10);
     }
 
-    const saved = await this.userRepository.preload({
-      id: user.id,
-      ...updateUserDto,
-    });
+    if (imageUrl) {
+      const existImage = await this.filesService.existImageInDB(imageUrl);
+      if (!existImage) throw new BadRequestException(ResMessages.ImageNotFound);
+    }
 
-    await this.userRepository.save(saved);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (updateUserDto.imageUrl && oldImageUrl)
-      await this.filesService.deleteImage(oldImageUrl);
+    try {
+      const userUpdated = await this.userRepository.preload({
+        id: user.id,
+        ...updateUserDto,
+      });
 
-    return saved;
+      userUpdated.imageUrl = imageUrl !== undefined ? imageUrl : oldImageUrl;
+
+      if (!userUpdated) throw new NotFoundException(ResMessages.UserNotFound);
+
+      await queryRunner.manager.save(userUpdated);
+
+      if (imageUrl !== undefined && oldImageUrl && imageUrl != oldImageUrl) {
+        await this.filesService.deleteUserImageByQueryRunner(
+          queryRunner,
+          oldImageUrl,
+        );
+      }
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return userUpdated;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+
+      this.handleDBError(error);
+    }
   }
 
   async login(loginUserDto: LoginUserDto) {

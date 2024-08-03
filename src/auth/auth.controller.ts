@@ -24,19 +24,19 @@ export class AuthController {
   }
 
   @Get('profile')
-  @Auth({ withoutVerification: true })
+  @Auth({ withoutVerification: true, withoutFamilyMember: true })
   profile(@GetUser() user: User) {
     return this.authService.profile(user);
   }
 
   @Post('resend_code')
-  @Auth({ withoutVerification: true })
+  @Auth({ withoutVerification: true, withoutFamilyMember: true })
   resendVerificationCode(@GetUser() user: User) {
     return this.authService.resendVerificationCode(user);
   }
 
   @Post('verify')
-  @Auth({ withoutVerification: true })
+  @Auth({ withoutVerification: true, withoutFamilyMember: true })
   verify(
     @GetUser() user: User,
     @Body() verificationCodeDto: VerificationCodeDto,
@@ -45,7 +45,7 @@ export class AuthController {
   }
 
   @Patch('edit')
-  @Auth()
+  @Auth({ withoutFamilyMember: true })
   editUser(@GetUser() user: User, @Body() updateUserDto: UpdateUserDto) {
     return this.authService.updateUser(user, updateUserDto);
   }

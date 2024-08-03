@@ -5,7 +5,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -34,7 +33,7 @@ export class Family {
   @ManyToOne(() => User, (user) => user.id, { nullable: false })
   createBy: User;
 
-  @OneToOne(() => File, { cascade: true })
+  @ManyToOne(() => File, { cascade: true })
   @JoinColumn({ referencedColumnName: 'url' })
   image?: File;
 

@@ -49,6 +49,14 @@ export class FilesService {
   }
 
   async deleteImageByQueryRunner(queryRunner: QueryRunner, url: string) {
-    queryRunner.manager.delete(File, { url });
+    await queryRunner.manager.delete(File, { url });
+  }
+
+  async deleteUserImageByQueryRunner(queryRunner: QueryRunner, url: string) {
+    const isUsed = await queryRunner.manager.count(User, {
+      where: { imageUrl: url },
+    });
+
+    if (!isUsed) await this.deleteImageByQueryRunner(queryRunner, url);
   }
 }

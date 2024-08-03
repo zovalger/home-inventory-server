@@ -27,7 +27,7 @@ import { FamilyModule } from 'src/family/family.module';
       useFactory: (configService: ConfigService) => {
         return {
           secret: configService.get('JWT_SECRET'),
-          signOptions: { expiresIn: '2h' },
+          signOptions: { expiresIn: configService.get('JWT_EXPIRE_TIME') },
         };
       },
     }),

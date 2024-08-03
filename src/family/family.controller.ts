@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch } from '@nestjs/common';
 
 import { FamilyService } from './family.service';
 import { CreateFamilyDto } from './dto/create-family.dto';
@@ -7,6 +7,7 @@ import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/auth/entities';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { FamilyRoles } from './interfaces';
+import { GetFamily } from './decorators/get-family.decorator';
 
 @Controller('family')
 export class FamilyController {
@@ -24,14 +25,15 @@ export class FamilyController {
     return this.familyService.myFamily(user);
   }
 
-  @Patch(':id')
+  @Patch()
   @Auth({ familyRole: [FamilyRoles.ouwner] })
   update(
     // @GetUser() user: User,
-    @Param('id') id: string,
+    // @Param('id') id: string,
+    @GetFamily('id') familyId: string,
     @Body() updateFamilyDto: UpdateFamilyDto,
   ) {
-    return this.familyService.update(id, updateFamilyDto);
+    return this.familyService.update(familyId, updateFamilyDto);
   }
 
   // // gestionar miembros

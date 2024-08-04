@@ -17,4 +17,7 @@ export class EmailService {
 
     await this.emailSender.send(user.email, 'User register', html);
   }
+
+  // todo: crear logica para enviar correos a los invitados
+  async sendEmail_InviteUsers() {}
 }

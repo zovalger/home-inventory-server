@@ -7,23 +7,29 @@ import {
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 import { User } from 'src/auth/entities';
-import { Family, FamilyMember } from './entities';
+import { Family, FamilyMember, FamilyMemberInvitation } from './entities';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FilesService } from 'src/files/files.service';
 import { FamilyRoles } from './interfaces';
 import { ResMessages } from 'src/config/res-messages';
+import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class FamilyService {
   constructor(
+    private readonly dataSource: DataSource,
+
     @InjectRepository(Family)
     private readonly familyRepository: Repository<Family>,
     @InjectRepository(FamilyMember)
     private readonly familyMemberRepository: Repository<FamilyMember>,
+    @InjectRepository(FamilyMemberInvitation)
+    private readonly familyMemberInvitationRepository: Repository<FamilyMemberInvitation>,
 
     private readonly filesService: FilesService,
-    private readonly dataSource: DataSource,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(user: User, createFamilyDto: CreateFamilyDto) {
@@ -135,12 +141,53 @@ export class FamilyService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} family`;
+  // gestion de miembros
+
+  // todo: probar
+  async getMembers(familyId: string) {
+    try {
+      const members = await this.familyMemberRepository.find({
+        where: { familyId },
+        relations: { user: true },
+      });
+
+      if (!members.length)
+        throw new NotFoundException(ResMessages.familyNotHaveMembers);
+
+      return members;
+    } catch (error) {
+      this.handleDBError(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} family`;
+  // todo: probar
+  async createFamilyInvitations(
+    familyId: string,
+    createFamilyInvitationsDto: CreateFamilyInvitationsDto,
+    createById: string,
+  ) {
+    const { invitations } = createFamilyInvitationsDto;
+
+    const invitationsData = invitations.map((inv) => ({
+      ...inv,
+      createById,
+      familyId,
+    }));
+
+    // todo: ver si tiene invitacion pendiente
+
+    try {
+      const invitationsDB =
+        this.familyMemberInvitationRepository.create(invitationsData);
+
+      await this.familyMemberInvitationRepository.save(invitationsDB);
+
+      await this.emailService.sendEmail_InviteUsers();
+
+      return;
+    } catch (error) {
+      this.handleDBError(error);
+    }
   }
 
   // async doesUserHaveaFamily() {}

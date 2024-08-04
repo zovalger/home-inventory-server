@@ -6,4 +6,7 @@ export enum ResMessages {
   familyNotFound = 'Family not found',
   UserForbiddenToFamily = 'The user is forbidden for this family',
   UserUnauthorizedToFamily = "The user isn't authorized for this family",
+
+  familyNotHaveMembers = 'The family not have members',
+  memberNotFound = 'Members not found',
 }

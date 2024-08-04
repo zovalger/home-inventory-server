@@ -9,6 +9,7 @@ import { Auth } from 'src/auth/decorators/auth.decorator';
 import { FamilyRoles } from './interfaces';
 import { GetFamily } from './decorators/get-family.decorator';
 import { Family } from './entities';
+import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto';
 
 @Controller('family')
 export class FamilyController {
@@ -38,10 +39,26 @@ export class FamilyController {
   }
 
   // // gestionar miembros
-  // @Post('members')
-  // addMember() {
-  //   return this.familyService.findOne(+id);
-  // }
+
+  @Get('members')
+  @Auth()
+  getMembers(@GetFamily('id') familyId: string) {
+    return this.familyService.getMembers(familyId);
+  }
+
+  @Post('members/invitation')
+  @Auth({ familyRole: [FamilyRoles.ouwner] })
+  createInvitations(
+    @GetFamily('id') familyId: string,
+    @GetUser('id') userId: string,
+    @Body() createFamilyInvitationsDto: CreateFamilyInvitationsDto,
+  ) {
+    return this.familyService.createFamilyInvitations(
+      familyId,
+      createFamilyInvitationsDto,
+      userId,
+    );
+  }
 
   // @Delete('members/:email')
   // deleteMember(@Param('email') email: string) {

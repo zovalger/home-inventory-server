@@ -163,9 +163,9 @@ export class FamilyService {
 
   // todo: probar
   async createFamilyInvitations(
-    familyId: string,
+    family: Family,
     createFamilyInvitationsDto: CreateFamilyInvitationsDto,
-    createById: string,
+    user: User,
   ) {
     const resultInvitations = {
       notInvited: { alreadyMember: [], alreadyInvited: [] },
@@ -197,7 +197,7 @@ export class FamilyService {
     const oldInvitations = (
       await this.familyMemberInvitationRepository.find({
         where: {
-          familyId,
+          familyId: family.id,
           guestEmail: In(guestEmailsToSave),
           status: FamilyMemberInvitationStatus.pending,
         },
@@ -228,8 +228,8 @@ export class FamilyService {
     const invitationsData = toInvite.map((inv) => {
       return {
         ...inv,
-        createById,
-        familyId,
+        createById: user.id,
+        familyId: family.id,
       };
     });
 
@@ -239,7 +239,11 @@ export class FamilyService {
 
       await this.familyMemberInvitationRepository.save(invitationsDB);
 
-      // await this.emailService.sendEmail_InviteUsers();
+      await this.emailService.sendEmail_InviteUsers({
+        familyName: family.name,
+        createByUserName: user.name,
+        invitations: invitationsData,
+      });
 
       return { invitations: resultInvitations };
     } catch (error) {

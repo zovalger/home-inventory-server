@@ -49,14 +49,14 @@ export class FamilyController {
   @Post('members/invitation')
   @Auth({ familyRole: [FamilyRoles.ouwner] })
   createInvitations(
-    @GetFamily('id') familyId: string,
-    @GetUser('id') userId: string,
+    @GetFamily() family: Family,
+    @GetUser() user: User,
     @Body() createFamilyInvitationsDto: CreateFamilyInvitationsDto,
   ) {
     return this.familyService.createFamilyInvitations(
-      familyId,
+      family,
       createFamilyInvitationsDto,
-      userId,
+      user,
     );
   }
 

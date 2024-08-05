@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Family } from './family.entity';
 import { FamilyRoles } from '../interfaces';
-import { FamilyMemberInvitationStatus } from '../interfaces/family-member-invitation-status.interfaces';
+import { FamilyMemberInvitationStatus } from '../interfaces/family-member-invitation-status.enum';
 import { User } from 'src/auth/entities';
 
 @Entity('family_member_invitation')

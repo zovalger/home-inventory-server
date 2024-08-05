@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -7,16 +8,17 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
-import { CreateFamilyDto } from './dto/create-family.dto';
-import { UpdateFamilyDto } from './dto/update-family.dto';
 import { User } from 'src/auth/entities';
 import { Family, FamilyMember, FamilyMemberInvitation } from './entities';
-import { FilesService } from 'src/files/files.service';
-import { FamilyRoles } from './interfaces';
-import { ResMessages } from 'src/config/res-messages';
+
+import { FamilyMemberInvitationStatus, FamilyRoles } from './interfaces';
+import { CreateFamilyDto } from './dto/create-family.dto';
+import { UpdateFamilyDto } from './dto/update-family.dto';
 import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto';
+
+import { FilesService } from 'src/files/files.service';
+import { ResMessages } from 'src/config/res-messages';
 import { EmailService } from 'src/email/email.service';
-import { FamilyMemberInvitationStatus } from './interfaces/family-member-invitation-status.interfaces';
 
 @Injectable()
 export class FamilyService {
@@ -82,6 +84,16 @@ export class FamilyService {
     }
   }
 
+  async getFamily_by_id(id: string) {
+    const family = await this.familyRepository.findOneBy({
+      id,
+    });
+
+    if (!family) throw new NotFoundException(ResMessages.invitationNotFound);
+
+    return family;
+  }
+
   async myFamily(user: User) {
     try {
       const family = await this.familyRepository.findOne({
@@ -143,7 +155,9 @@ export class FamilyService {
     }
   }
 
-  // gestion de miembros
+  // ************************************************************
+  //                    gestion de miembros
+  // ************************************************************
 
   async getMembers(familyId: string) {
     try {
@@ -160,6 +174,18 @@ export class FamilyService {
       this.handleDBError(error);
     }
   }
+
+  // todo: probar
+  async isMemberOfThisFamily(
+    userId: string,
+    familyId: string,
+  ): Promise<boolean> {
+    return !!(await this.familyMemberRepository.countBy({ userId, familyId }));
+  }
+
+  // ************************************************************
+  //                      invitaciones
+  // ************************************************************
 
   // todo: probar
   async createFamilyInvitations(
@@ -252,6 +278,121 @@ export class FamilyService {
   }
 
   // async doesUserHaveaFamily() {}
+
+  // todo: probar
+  async getInvitation_by_id(id: string): Promise<FamilyMemberInvitation> {
+    const invitation = await this.familyMemberInvitationRepository.findOneBy({
+      id,
+    });
+
+    if (!invitation)
+      throw new NotFoundException(ResMessages.invitationNotFound);
+
+    return invitation;
+  }
+
+  // todo: probar
+  async getInvitationOfFamily(
+    familyId: string,
+  ): Promise<FamilyMemberInvitation[]> {
+    return await this.familyMemberInvitationRepository.findBy({
+      familyId,
+    });
+  }
+
+  // todo: probar
+  async invitationToMy(userEmail: string): Promise<FamilyMemberInvitation[]> {
+    return await this.familyMemberInvitationRepository.findBy({
+      guestEmail: userEmail,
+    });
+  }
+
+  // todo: probar
+  async acceptInvitation(invitationId: string, user: User) {
+    const invitation = await this.getInvitation_by_id(invitationId);
+    const { guestEmail, familyId, role } = invitation;
+
+    // todo: ver si el usuario es el de la invitacion
+    if (guestEmail != user.email)
+      throw new ForbiddenException(ResMessages.UserForbidden);
+
+    // todo: ver si el usuario ya es miembro
+    const isMember = this.isMemberOfThisFamily(user.id, familyId);
+    if (isMember) throw new BadRequestException(ResMessages.isAlreadyMember);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // todo: modificar estado de la inviacion
+      invitation.status = FamilyMemberInvitationStatus.acepted;
+      await queryRunner.manager.save(invitation);
+
+      // todo: crear nuevo miembro
+
+      const member = this.familyMemberRepository.create({
+        role,
+        familyId,
+        userId: user.id,
+      });
+
+      await queryRunner.manager.save(member);
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return { invitation, member };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+
+      this.handleDBError(error);
+    }
+
+    // const family=
+  }
+
+  // todo: probar
+  async rejecteInvitation(invitationId: string, user: User) {
+    const { email } = user;
+
+    const invitation = await this.getInvitation_by_id(invitationId);
+
+    if (email != invitation.guestEmail)
+      throw new ForbiddenException(ResMessages.UserForbidden);
+
+    try {
+      invitation.status = FamilyMemberInvitationStatus.rejected;
+
+      await this.familyMemberInvitationRepository.save(invitation);
+
+      return invitation;
+    } catch (error) {
+      this.handleDBError(error);
+    }
+  }
+
+  // todo: probar
+  async cancelInvitation(invitationId: string, family: Family) {
+    // const { id } = user;
+
+    const invitation = await this.getInvitation_by_id(invitationId);
+
+    // if (id != invitation.createById)
+    if (invitation.familyId != family.id)
+      throw new ForbiddenException(ResMessages.UserForbidden);
+
+    try {
+      invitation.status = FamilyMemberInvitationStatus.canceled;
+
+      await this.familyMemberInvitationRepository.save(invitation);
+
+      return invitation;
+    } catch (error) {
+      this.handleDBError(error);
+    }
+  }
 
   handleDBError(error: any) {
     if (error.code == '23505')

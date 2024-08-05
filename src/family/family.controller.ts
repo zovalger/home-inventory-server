@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Get, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 
 import { FamilyService } from './family.service';
 import { CreateFamilyDto } from './dto/create-family.dto';
@@ -40,13 +49,7 @@ export class FamilyController {
 
   // // gestionar miembros
 
-  @Get('members')
-  @Auth()
-  getMembers(@GetFamily('id') familyId: string) {
-    return this.familyService.getMembers(familyId);
-  }
-
-  @Post('members/invitation')
+  @Post('invitations')
   @Auth({ familyRole: [FamilyRoles.ouwner] })
   createInvitations(
     @GetFamily() family: Family,
@@ -58,6 +61,56 @@ export class FamilyController {
       createFamilyInvitationsDto,
       user,
     );
+  }
+
+  // todo: obtener las invitaciones del grupo familiar
+  @Get('invitations')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  getInvitationOfFamily(@GetFamily('id') familyId: string) {
+    return this.familyService.getInvitationOfFamily(familyId);
+  }
+
+  // todo: obtener invitaciones hacia mi
+  @Get('invitations/to_my')
+  @Auth({ withoutFamilyMember: true })
+  getInvitationToMy(@GetUser('email') userEmail: string) {
+    return this.familyService.invitationToMy(userEmail);
+  }
+
+  // todo: accept
+  @Post('invitations/:id/accept')
+  @Auth({ withoutFamilyMember: true })
+  acceptInvitation(
+    @Param('id', new ParseUUIDPipe()) invitationId: string,
+    @GetUser() user: User,
+  ) {
+    return this.familyService.acceptInvitation(invitationId, user);
+  }
+
+  // todo: dejectec
+  @Delete('invitations/:id/reject')
+  @Auth({ withoutFamilyMember: true })
+  rejecteInvitation(
+    @Param('id', new ParseUUIDPipe()) invitationId: string,
+    @GetUser() user: User,
+  ) {
+    return this.familyService.rejecteInvitation(invitationId, user);
+  }
+
+  // todo: canceled
+  @Delete('invitations/:id/cancel')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  cancelInvitation(
+    @Param('id', new ParseUUIDPipe()) invitationId: string,
+    @GetFamily() family: Family,
+  ) {
+    return this.familyService.cancelInvitation(invitationId, family);
+  }
+
+  @Get('members')
+  @Auth()
+  getMembers(@GetFamily('id') familyId: string) {
+    return this.familyService.getMembers(familyId);
   }
 
   // @Delete('members/:email')

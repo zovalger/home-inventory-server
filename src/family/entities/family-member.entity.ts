@@ -9,6 +9,9 @@ export class FamilyMember {
   id: string;
 
   @Column('text', { nullable: false })
+  role: FamilyRoles;
+
+  @Column('text', { nullable: false })
   familyId: string;
 
   @Column('text', { nullable: false })
@@ -19,7 +22,4 @@ export class FamilyMember {
 
   @ManyToOne(() => User, (user) => user.family)
   user: User;
-
-  @Column('text', { nullable: false })
-  role: FamilyRoles;
 }

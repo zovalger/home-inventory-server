@@ -16,6 +16,7 @@ export const GetFamily = createParamDecorator(
   ) => {
     const req = ctx.switchToHttp().getRequest();
 
+    // familia del usuario
     const family = req.family as Family;
 
     if (!family)

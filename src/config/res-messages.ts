@@ -1,14 +1,35 @@
 export enum ResMessages {
-  UserAlreadyVerified = 'The user is already verified',
-  UserNotFound = 'User not found',
+  // ************************** files **************************
   ImageNotFound = "The image isn't registed in DB",
 
+  // ************************** users **************************
+  UserNotFound = 'User not found',
+
+  UserForbidden = 'You not have authorization',
+
+  UserAlreadyVerified = 'The user is already verified',
+
+  // ************************** family **************************
+
   familyNotFound = 'Family not found',
+
   UserForbiddenToFamily = 'The user is forbidden for this family',
+
   UserUnauthorizedToFamily = "The user isn't authorized for this family",
 
-  familyNotHaveMembers = 'The family not have members',
+  // ************************** members **************************
+
   memberNotFound = 'Members not found',
 
+  familyNotHaveMembers = 'The family not have members',
+
+  isAlreadyMember = 'the user is already member of this family',
+
+  // ************************** invitations **************************
+
+  invitationNotFound = 'Invitation no found',
+
   notUserToInvite = 'no users to invite',
+
+  rejecteInvitation = 'The invitations is rejected',
 }

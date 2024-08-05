@@ -9,4 +9,6 @@ export enum ResMessages {
 
   familyNotHaveMembers = 'The family not have members',
   memberNotFound = 'Members not found',
+
+  notUserToInvite = 'no users to invite',
 }

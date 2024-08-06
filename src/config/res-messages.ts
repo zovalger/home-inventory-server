@@ -24,6 +24,7 @@ export enum ResMessages {
   familyNotHaveMembers = 'The family not have members',
 
   isAlreadyMember = 'the user is already member of this family',
+  memberHasOtherFamily = 'The user already has a family group, they must leave the other family group to be able to accept this invitation.',
 
   // ************************** invitations **************************
 
@@ -32,4 +33,5 @@ export enum ResMessages {
   notUserToInvite = 'no users to invite',
 
   rejecteInvitation = 'The invitations is rejected',
+  invitationIsNotActive = "The invitation isn't active",
 }

@@ -24,6 +24,10 @@ import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto'
 export class FamilyController {
   constructor(private readonly familyService: FamilyService) {}
 
+  // ************************************************************
+  //                    gestion de familias
+  // ************************************************************
+
   @Post()
   @Auth({ withoutFamilyMember: true })
   create(@GetUser() user: User, @Body() createFamilyDto: CreateFamilyDto) {
@@ -39,15 +43,25 @@ export class FamilyController {
   @Patch()
   @Auth({ familyRole: [FamilyRoles.ouwner] })
   update(
-    // @GetUser() user: User,
-    // @Param('id') id: string,
     @GetFamily('id') familyId: string,
     @Body() updateFamilyDto: UpdateFamilyDto,
   ) {
     return this.familyService.update(familyId, updateFamilyDto);
   }
 
-  // // gestionar miembros
+  // ************************************************************
+  //                    gestion de miembros
+  // ************************************************************
+
+  @Get('members')
+  @Auth()
+  getMembers(@GetFamily('id') familyId: string) {
+    return this.familyService.getMembers(familyId);
+  }
+
+  // ************************************************************
+  //                      invitaciones
+  // ************************************************************
 
   @Post('invitations')
   @Auth({ familyRole: [FamilyRoles.ouwner] })
@@ -63,14 +77,14 @@ export class FamilyController {
     );
   }
 
-  // todo: obtener las invitaciones del grupo familiar
+  // todo: colocar query segun estado
   @Get('invitations')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   getInvitationOfFamily(@GetFamily('id') familyId: string) {
     return this.familyService.getInvitationOfFamily(familyId);
   }
 
-  // todo: obtener invitaciones hacia mi
+  // todo: colocar query segun estado
   @Get('invitations/to_my')
   @Auth({ withoutFamilyMember: true })
   getInvitationToMy(@GetUser('email') userEmail: string) {
@@ -87,7 +101,6 @@ export class FamilyController {
     return this.familyService.acceptInvitation(invitationId, user);
   }
 
-  // todo: dejectec
   @Delete('invitations/:id/reject')
   @Auth({ withoutFamilyMember: true })
   rejecteInvitation(
@@ -97,7 +110,6 @@ export class FamilyController {
     return this.familyService.rejecteInvitation(invitationId, user);
   }
 
-  // todo: canceled
   @Delete('invitations/:id/cancel')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   cancelInvitation(
@@ -105,12 +117,6 @@ export class FamilyController {
     @GetFamily() family: Family,
   ) {
     return this.familyService.cancelInvitation(invitationId, family);
-  }
-
-  @Get('members')
-  @Auth()
-  getMembers(@GetFamily('id') familyId: string) {
-    return this.familyService.getMembers(familyId);
   }
 
   // @Delete('members/:email')

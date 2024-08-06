@@ -183,6 +183,10 @@ export class FamilyService {
     return !!(await this.familyMemberRepository.countBy({ userId, familyId }));
   }
 
+  async isMemberOfAnyFamily(userId: string): Promise<FamilyMember> {
+    return await this.familyMemberRepository.findOneBy({ userId });
+  }
+
   // ************************************************************
   //                      invitaciones
   // ************************************************************
@@ -291,7 +295,6 @@ export class FamilyService {
     return invitation;
   }
 
-  // todo: probar
   async getInvitationOfFamily(
     familyId: string,
   ): Promise<FamilyMemberInvitation[]> {
@@ -300,10 +303,14 @@ export class FamilyService {
     });
   }
 
-  // todo: probar
   async invitationToMy(userEmail: string): Promise<FamilyMemberInvitation[]> {
-    return await this.familyMemberInvitationRepository.findBy({
-      guestEmail: userEmail,
+    return await this.familyMemberInvitationRepository.find({
+      where: { guestEmail: userEmail },
+      select: {
+        family: { imageUrl: true, name: true, tier: true },
+        createBy: { name: true, lastName: true, email: true, imageUrl: true },
+      },
+      relations: { family: true, createBy: true },
     });
   }
 
@@ -317,8 +324,13 @@ export class FamilyService {
       throw new ForbiddenException(ResMessages.UserForbidden);
 
     // todo: ver si el usuario ya es miembro
-    const isMember = this.isMemberOfThisFamily(user.id, familyId);
-    if (isMember) throw new BadRequestException(ResMessages.isAlreadyMember);
+    const isMember = await this.isMemberOfAnyFamily(user.id);
+    if (isMember)
+      throw new BadRequestException(
+        isMember.familyId == familyId
+          ? ResMessages.isAlreadyMember
+          : ResMessages.memberHasOtherFamily,
+      );
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -359,6 +371,9 @@ export class FamilyService {
 
     const invitation = await this.getInvitation_by_id(invitationId);
 
+    if (invitation.status != FamilyMemberInvitationStatus.pending)
+      throw new BadRequestException(ResMessages.invitationIsNotActive);
+
     if (email != invitation.guestEmail)
       throw new ForbiddenException(ResMessages.UserForbidden);
 
@@ -373,13 +388,12 @@ export class FamilyService {
     }
   }
 
-  // todo: probar
   async cancelInvitation(invitationId: string, family: Family) {
-    // const { id } = user;
-
     const invitation = await this.getInvitation_by_id(invitationId);
 
-    // if (id != invitation.createById)
+    if (invitation.status != FamilyMemberInvitationStatus.pending)
+      throw new BadRequestException(ResMessages.invitationIsNotActive);
+
     if (invitation.familyId != family.id)
       throw new ForbiddenException(ResMessages.UserForbidden);
 

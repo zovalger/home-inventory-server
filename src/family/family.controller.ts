@@ -19,6 +19,7 @@ import { FamilyRoles } from './interfaces';
 import { GetFamily } from './decorators/get-family.decorator';
 import { Family } from './entities';
 import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto';
+import { UpdateFamilyMemberDto } from './dto';
 
 @Controller('family')
 export class FamilyController {
@@ -57,6 +58,23 @@ export class FamilyController {
   @Auth()
   getMembers(@GetFamily('id') familyId: string) {
     return this.familyService.getMembers(familyId);
+  }
+
+  // todo: por probar
+  @Patch('members/:id')
+  @Auth({ familyRole: [FamilyRoles.admin, FamilyRoles.ouwner] })
+  updateMember(
+    @Param('id', new ParseUUIDPipe()) memberId: string,
+    @Body() updateFamilyMemberDto: UpdateFamilyMemberDto,
+    @GetUser() user: User,
+    @GetFamily('id') familyId: string,
+  ) {
+    return this.familyService.updateMember(
+      memberId,
+      updateFamilyMemberDto,
+      user,
+      familyId,
+    );
   }
 
   // ************************************************************

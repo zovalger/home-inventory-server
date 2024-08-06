@@ -19,6 +19,7 @@ import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto'
 import { FilesService } from 'src/files/files.service';
 import { ResMessages } from 'src/config/res-messages';
 import { EmailService } from 'src/email/email.service';
+import { UpdateFamilyMemberDto } from './dto';
 
 @Injectable()
 export class FamilyService {
@@ -175,7 +176,21 @@ export class FamilyService {
     }
   }
 
-  // todo: probar
+  // todo: por probar
+  async getMember_by_id(id: string) {
+    try {
+      const member = await this.familyMemberRepository.findOneBy({
+        id,
+      });
+
+      if (!member) throw new NotFoundException(ResMessages.memberNotFound);
+
+      return member;
+    } catch (error) {
+      this.handleDBError(error);
+    }
+  }
+
   async isMemberOfThisFamily(
     userId: string,
     familyId: string,
@@ -185,6 +200,33 @@ export class FamilyService {
 
   async isMemberOfAnyFamily(userId: string): Promise<FamilyMember> {
     return await this.familyMemberRepository.findOneBy({ userId });
+  }
+
+  // todo: por probar
+  async updateMember(
+    memberId: string,
+    updateFamilyMemberDto: UpdateFamilyMemberDto,
+    user: User,
+    familyId: string,
+  ) {
+    const isMember = await this.isMemberOfThisFamily(user.id, familyId);
+
+    if (!isMember) throw new ForbiddenException(ResMessages.UserForbidden);
+
+    const member = await this.familyMemberRepository.preload({
+      id: memberId,
+      ...updateFamilyMemberDto,
+    });
+
+    if (!member) throw new NotFoundException(ResMessages.memberNotFound);
+
+    try {
+      await this.familyMemberRepository.save(member);
+
+      return member;
+    } catch (error) {
+      this.handleDBError(error);
+    }
   }
 
   // ************************************************************

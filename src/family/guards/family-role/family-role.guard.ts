@@ -66,6 +66,8 @@ export class FamilyRoleGuard implements CanActivate {
     if (!member) throw new ForbiddenException(ResMessages.familyNotFound);
 
     req['family'] = member.family;
+    delete member.family;
+    req['family_member'] = member;
 
     // tiene que ser miembro de la familia sin especificar rol
     if (!roles.length) return true;

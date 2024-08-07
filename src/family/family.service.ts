@@ -20,6 +20,7 @@ import { FilesService } from 'src/files/files.service';
 import { ResMessages } from 'src/config/res-messages';
 import { EmailService } from 'src/email/email.service';
 import { UpdateRoleMemberDto } from './dto';
+import { AllUserData } from 'src/common/interfaces';
 
 @Injectable()
 export class FamilyService {
@@ -210,31 +211,66 @@ export class FamilyService {
   }
 
   // todo: por probar
-  async updateMember(
+  async changeRoleMember(
     memberId: string,
     updateRoleMemberDto: UpdateRoleMemberDto,
-    user: User,
-    family: Family,
+    { user, userFamilyMember }: Omit<AllUserData, 'userFamily'>,
   ) {
+    if (updateRoleMemberDto.role == FamilyRoles.ouwner)
+      throw new BadRequestException(ResMessages.UserForbidden);
+
+    const member = await this.getMember_by_id(memberId);
+
+    // que el usuario no se cambie el rol a si mismo
+    if (member.userId == user.id)
+      throw new ForbiddenException(ResMessages.UserForbidden);
+
     // ver si es de la misma familia
-    // // const member = getmembe
-    // // todo: el usuario admin/ouwner pertenece a esta familia?
-    // const isUserMember = await this.isMemberOfThisFamily(user.id, family.id);
-    // if (!isUserMember) throw new ForbiddenException(ResMessages.UserForbidden);
-    // // todo: que el usuario no se cambie el rol a si mismo
-    // if (isUserMember.role == FamilyRoles.ouwner)
-    //   throw new ForbiddenException(ResMessages.UserForbidden);
-    // const member = await this.familyMemberRepository.preload({
-    //   id: memberId,
-    //   ...updateFamilyMemberDto,
-    // });
-    // if (!member) throw new NotFoundException(ResMessages.memberNotFound);
-    // try {
-    //   await this.familyMemberRepository.save(member);
-    //   return member;
-    // } catch (error) {
-    //   this.handleDBError(error);
-    // }
+    // el usuario ouwner pertenece a esta familia?
+    if (member.familyId != userFamilyMember.familyId)
+      throw new ForbiddenException(ResMessages.UserForbiddenToFamily);
+
+    try {
+      member.role = updateRoleMemberDto.role;
+
+      await this.familyMemberRepository.save(member);
+
+      return member;
+    } catch (error) {
+      this.handleDBError(error);
+    }
+  }
+
+  async deleteMemberFamily(
+    memberId: string,
+    { user, userFamilyMember }: Omit<AllUserData, 'userFamily'>,
+  ) {
+    const { role, familyId } = userFamilyMember;
+
+    const member = await this.getMember_by_id(memberId);
+
+    if (role == FamilyRoles.children)
+      throw new ForbiddenException(ResMessages.UserForbidden);
+
+    // si no es el dueño solo puede eliminarse a si mismo
+    if (user.id == member.userId && role != FamilyRoles.ouwner) {
+      const result = await this.familyMemberRepository.delete({ id: memberId });
+      return result;
+    }
+
+    // es de la misma familia?
+    if (familyId != member.familyId)
+      throw new ForbiddenException(ResMessages.UserUnauthorizedToFamily);
+
+    if (role != FamilyRoles.ouwner)
+      throw new ForbiddenException(ResMessages.UserForbidden);
+
+    try {
+      const result = await this.familyMemberRepository.delete({ id: memberId });
+      return result;
+    } catch (error) {
+      this.handleDBError(error);
+    }
   }
 
   // ************************************************************

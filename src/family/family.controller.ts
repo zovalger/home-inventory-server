@@ -16,10 +16,11 @@ import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/auth/entities';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { FamilyRoles } from './interfaces';
-import { GetFamily } from './decorators/get-family.decorator';
-import { Family } from './entities';
+import { GetUserFamily } from './decorators/get-user-family.decorator';
+import { Family, FamilyMember } from './entities';
 import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto';
 import { UpdateRoleMemberDto } from './dto';
+import { GetUserFamilyMember } from './decorators/get-user-family-member.decorator';
 
 @Controller('family')
 export class FamilyController {
@@ -37,14 +38,14 @@ export class FamilyController {
 
   @Get()
   @Auth()
-  myFamily(@GetFamily() family: Family) {
+  myFamily(@GetUserFamily() family: Family) {
     return family;
   }
 
   @Patch()
   @Auth({ familyRole: [FamilyRoles.ouwner] })
   update(
-    @GetFamily('id') familyId: string,
+    @GetUserFamily('id') familyId: string,
     @Body() updateFamilyDto: UpdateFamilyDto,
   ) {
     return this.familyService.update(familyId, updateFamilyDto);
@@ -56,31 +57,37 @@ export class FamilyController {
 
   @Get('members')
   @Auth()
-  getMembers(@GetFamily('id') familyId: string) {
+  getMembers(@GetUserFamily('id') familyId: string) {
     return this.familyService.getMembers(familyId);
   }
 
   // todo: por probar
   @Patch('members/:id')
-  @Auth({ familyRole: [FamilyRoles.admin, FamilyRoles.ouwner] })
+  @Auth({ familyRole: [FamilyRoles.ouwner] })
   changeMemberRole(
     @Param('id', new ParseUUIDPipe()) memberId: string,
     @Body() updateRoleMemberDto: UpdateRoleMemberDto,
     @GetUser() user: User,
-    @GetFamily() family: Family,
+    @GetUserFamilyMember() userFamilyMember: FamilyMember,
   ) {
-    return this.familyService.updateMember(
-      memberId,
-      updateRoleMemberDto,
+    return this.familyService.changeRoleMember(memberId, updateRoleMemberDto, {
       user,
-      family,
-    );
+      userFamilyMember,
+    });
   }
 
-  // @Delete('members/:email')
-  // deleteMember(@Param('email') email: string) {
-  //   return this.familyService.update();
-  // }
+  @Delete('members/:id')
+  @Auth()
+  deleteMember(
+    @Param('id', new ParseUUIDPipe()) memberId: string,
+    @GetUser() user: User,
+    @GetUserFamilyMember() userFamilyMember: FamilyMember,
+  ) {
+    return this.familyService.deleteMemberFamily(memberId, {
+      user,
+      userFamilyMember,
+    });
+  }
 
   // ************************************************************
   //                      invitaciones
@@ -89,7 +96,7 @@ export class FamilyController {
   @Post('invitations')
   @Auth({ familyRole: [FamilyRoles.ouwner] })
   createInvitations(
-    @GetFamily() family: Family,
+    @GetUserFamily() family: Family,
     @GetUser() user: User,
     @Body() createFamilyInvitationsDto: CreateFamilyInvitationsDto,
   ) {
@@ -103,7 +110,7 @@ export class FamilyController {
   // todo: colocar query segun estado
   @Get('invitations')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
-  getInvitationOfFamily(@GetFamily('id') familyId: string) {
+  getInvitationOfFamily(@GetUserFamily('id') familyId: string) {
     return this.familyService.getInvitationOfFamily(familyId);
   }
 
@@ -137,7 +144,7 @@ export class FamilyController {
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   cancelInvitation(
     @Param('id', new ParseUUIDPipe()) invitationId: string,
-    @GetFamily() family: Family,
+    @GetUserFamily() family: Family,
   ) {
     return this.familyService.cancelInvitation(invitationId, family);
   }

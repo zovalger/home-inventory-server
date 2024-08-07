@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 
 import { ResMessages } from 'src/config/res-messages';
-import { Family } from '../entities';
+import { FamilyMember } from '../entities';
 
-export const GetFamily = createParamDecorator(
+export const GetUserFamilyMember = createParamDecorator(
   (
     // parametros al usar el decorador
     data: string,
@@ -16,13 +16,13 @@ export const GetFamily = createParamDecorator(
   ) => {
     const req = ctx.switchToHttp().getRequest();
 
-    // familia del usuario
-    const family = req.family as Family;
+    // registro de miembro familiar del usuario
+    const member = req.family_member as FamilyMember;
 
-    if (!family)
+    if (!member)
       throw new InternalServerErrorException(ResMessages.familyNotFound);
 
-    const result = data ? family[data] : family;
+    const result = data ? member[data] : member;
 
     return result;
   },

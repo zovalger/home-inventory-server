@@ -19,7 +19,7 @@ import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto'
 import { FilesService } from 'src/files/files.service';
 import { ResMessages } from 'src/config/res-messages';
 import { EmailService } from 'src/email/email.service';
-import { UpdateFamilyMemberDto } from './dto';
+import { UpdateRoleMemberDto } from './dto';
 
 @Injectable()
 export class FamilyService {
@@ -191,11 +191,18 @@ export class FamilyService {
     }
   }
 
+  async getMember_by_IdAndFamily(
+    userId: string,
+    familyId: string,
+  ): Promise<FamilyMember> {
+    return await this.familyMemberRepository.findOneBy({ userId, familyId });
+  }
+
   async isMemberOfThisFamily(
     userId: string,
     familyId: string,
   ): Promise<boolean> {
-    return !!(await this.familyMemberRepository.countBy({ userId, familyId }));
+    return !!(await this.getMember_by_IdAndFamily(userId, familyId));
   }
 
   async isMemberOfAnyFamily(userId: string): Promise<FamilyMember> {
@@ -205,28 +212,29 @@ export class FamilyService {
   // todo: por probar
   async updateMember(
     memberId: string,
-    updateFamilyMemberDto: UpdateFamilyMemberDto,
+    updateRoleMemberDto: UpdateRoleMemberDto,
     user: User,
-    familyId: string,
+    family: Family,
   ) {
-    const isMember = await this.isMemberOfThisFamily(user.id, familyId);
-
-    if (!isMember) throw new ForbiddenException(ResMessages.UserForbidden);
-
-    const member = await this.familyMemberRepository.preload({
-      id: memberId,
-      ...updateFamilyMemberDto,
-    });
-
-    if (!member) throw new NotFoundException(ResMessages.memberNotFound);
-
-    try {
-      await this.familyMemberRepository.save(member);
-
-      return member;
-    } catch (error) {
-      this.handleDBError(error);
-    }
+    // ver si es de la misma familia
+    // // const member = getmembe
+    // // todo: el usuario admin/ouwner pertenece a esta familia?
+    // const isUserMember = await this.isMemberOfThisFamily(user.id, family.id);
+    // if (!isUserMember) throw new ForbiddenException(ResMessages.UserForbidden);
+    // // todo: que el usuario no se cambie el rol a si mismo
+    // if (isUserMember.role == FamilyRoles.ouwner)
+    //   throw new ForbiddenException(ResMessages.UserForbidden);
+    // const member = await this.familyMemberRepository.preload({
+    //   id: memberId,
+    //   ...updateFamilyMemberDto,
+    // });
+    // if (!member) throw new NotFoundException(ResMessages.memberNotFound);
+    // try {
+    //   await this.familyMemberRepository.save(member);
+    //   return member;
+    // } catch (error) {
+    //   this.handleDBError(error);
+    // }
   }
 
   // ************************************************************

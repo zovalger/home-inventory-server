@@ -1,2 +1,5 @@
-export { MemberFamily } from './member-family.decorator';
-export { FamilyRoleProtected } from './family-role-protected.decorator';
+export { MemberFamily, META_MEMBER_FAMILY } from './member-family.decorator';
+export {
+  FamilyRoleProtected,
+  META_FAMILY_ROLES,
+} from './family-role-protected.decorator';

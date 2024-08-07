@@ -15,23 +15,29 @@ export class ProductTransaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('text', { nullable: false })
-  productid: string;
-
   @Column('text', { nullable: false, default: ProductTransactionType.add })
   type: ProductTransactionType; // add, subtract, unpacking
 
   @Column('float', { nullable: false, default: 1 })
   quantity: number;
 
-  @Column('float')
+  // automatico
+  @Column('float', { nullable: true, default: null })
   remainder: number;
 
   @Column('date', { nullable: true })
   expirationDate: string;
 
+  // ****************** llaves foraneas ******************
+
+  @Column('text', { nullable: false })
+  productId: string;
+
   @Column('text', { nullable: true })
   transactionToSustractId: string;
+
+  @Column('text', { nullable: false })
+  createById: string;
 
   // ****************** relaciones ******************
 

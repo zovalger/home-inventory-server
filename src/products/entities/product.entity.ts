@@ -21,13 +21,22 @@ export class Product {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column('text', { nullable: false })
+  name: string;
+
+  @Column('text', { nullable: true })
+  brand: string;
+
+  @Column('text', { nullable: true })
+  model: string;
+
   @Column('float', { nullable: false, default: 0 })
   currentQuantity: number;
 
   @Column('float', { nullable: false, default: 0 })
   relativeQuantity: number;
 
-  @Column('float', { nullable: false, default: 0 })
+  @Column('float', { nullable: true, default: 0 })
   minQuantity: number;
 
   @Column('float', { nullable: true, default: null })
@@ -43,7 +52,6 @@ export class Product {
 
   @Column('text', { nullable: true, default: UnitOfMeasurement.unit })
   unitOfMeasurement: UnitOfMeasurement;
-  // brand: string;
 
   @Column('text', { nullable: false })
   familyId: string;
@@ -56,7 +64,7 @@ export class Product {
 
   // ****************** relaciones ******************
 
-  @OneToMany(() => ProductTransaction, (transaction) => transaction.productid)
+  @OneToMany(() => ProductTransaction, (transaction) => transaction.productId)
   transactions: ProductTransaction[];
 
   @ManyToOne(() => File, { cascade: true })

@@ -9,6 +9,7 @@ import { CommonModule } from './common/common.module';
 import { EmailModule } from './email/email.module';
 import { FilesModule } from './files/files.module';
 import { FamilyModule } from './family/family.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -38,6 +39,8 @@ import { FamilyModule } from './family/family.module';
     FilesModule,
 
     FamilyModule,
+
+    ProductsModule,
   ],
   controllers: [],
   providers: [],

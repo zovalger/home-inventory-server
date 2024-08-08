@@ -12,7 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Observable } from 'rxjs';
 
 import { User } from 'src/auth/entities';
-import { ResMessages } from 'src/config/res-messages';
+import { ResMessages } from 'src/common/res-messages/res-messages';
 import { META_FAMILY_ROLES } from 'src/family/decorators/family-role-protected.decorator';
 import { Family, FamilyMember } from 'src/family/entities';
 import { FamilyRoles } from 'src/family/interfaces';

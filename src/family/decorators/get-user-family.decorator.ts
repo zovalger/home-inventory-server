@@ -4,7 +4,7 @@ import {
   createParamDecorator,
 } from '@nestjs/common';
 
-import { ResMessages } from 'src/config/res-messages';
+import { ResMessages } from 'src/common/res-messages/res-messages';
 import { Family } from '../entities';
 
 export const GetUserFamily = createParamDecorator(

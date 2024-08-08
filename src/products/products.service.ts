@@ -9,12 +9,21 @@ import { DataSource, QueryRunner, Repository } from 'typeorm';
 
 import { AllUserData } from 'src/common/interfaces';
 import { Product, ProductEquivalence, ProductTransaction } from './entities';
-import { CreateProductDto, CreateProductTransactionDto } from './dto';
+import {
+  CreateProductDto,
+  CreateProductTransactionDto,
+  UpdateProductDto,
+} from './dto';
 import { ProductTransactionType, SimpleAddTransaction } from './interfaces';
+import { ResMessages } from 'src/common/res-messages/res-messages';
+import { QueryProductDto } from './dto/query-product.dto';
+import { FamilyService } from 'src/family/family.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
+    private readonly familyService: FamilyService,
+
     private readonly dataSource: DataSource,
 
     @InjectRepository(Product)
@@ -31,31 +40,42 @@ export class ProductsService {
     createProductDto: CreateProductDto,
     { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
   ) {
-    const { currentQuantity, ...productData } = createProductDto;
+    // const { currentQuantity, ...productData } = createProductDto;
     const { id: createById } = user;
     const { id: familyId } = userFamily;
+
+    const otherProduct = await this.productRepository
+      .createQueryBuilder()
+      .where('UPPER(name)=:name AND "familyId"=:familyId', {
+        name: createProductDto.name.toUpperCase(),
+        familyId,
+      })
+      .getOne();
+
+    if (otherProduct)
+      throw new BadRequestException(ResMessages.productAlreadyExist);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     const product = this.productRepository.create({
-      ...productData,
+      ...createProductDto,
       createById,
       familyId,
     });
     try {
       await queryRunner.manager.save(product);
 
-      if (currentQuantity)
-        await this.createTransaction_add_by_queryRunner(
-          {
-            quantity: currentQuantity,
-            productId: product.id,
-            createById: user.id,
-          },
-          queryRunner,
-        );
+      // if (currentQuantity)
+      //   await this.createTransaction_add_by_queryRunner(
+      //     {
+      //       quantity: currentQuantity,
+      //       productId: product.id,
+      //       createById: user.id,
+      //     },
+      //     queryRunner,
+      //   );
 
       await queryRunner.commitTransaction();
       await queryRunner.release();
@@ -69,17 +89,53 @@ export class ProductsService {
     }
   }
 
-  // findAll() {
-  //   return `This action returns all products`;
-  // }
+  async findAll(familyId: string, queryProductDto: QueryProductDto) {
+    const { limit = 10, offset = 0, name = '' } = queryProductDto;
+
+    console.log(name);
+
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .where('product.familyId=:familyId', { familyId })
+      .andWhere('UPPER(product.name) LIKE :name', { name: `%${name}%` })
+      .orderBy({ name: 'ASC' })
+      .take(limit)
+      .skip(offset)
+      .getMany();
+
+    return products;
+  }
 
   // findOne(id: number) {
   //   return `This action returns a #${id} product`;
   // }
 
-  // update(id: number, updateProductDto: UpdateProductDto) {
-  //   return `This action updates a #${id} product`;
-  // }
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    { user }: Pick<AllUserData, 'user'>,
+  ) {
+    const product = await this.productRepository.preload({
+      id,
+      ...updateProductDto,
+    });
+
+    const isMember = !(await this.familyService.isMemberOfThisFamily(
+      user.id,
+      product.familyId,
+    ));
+    if (!isMember)
+      throw new BadRequestException(ResMessages.UserUnauthorizedToFamily);
+    // ver si es de la misma familia
+
+    try {
+      await this.productRepository.save(product);
+
+      return product;
+    } catch (error) {
+      this.handleDBError(error);
+    }
+  }
 
   // remove(id: number) {
   //   return `This action removes a #${id} product`;

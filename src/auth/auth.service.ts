@@ -18,7 +18,7 @@ import {
   LoginUserDto,
   CreateUserVerificationCodeDto,
 } from './dto';
-import { ResMessages } from 'src/config/res-messages';
+import { ResMessages } from 'src/common/res-messages/res-messages';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FilesService } from 'src/files/files.service';
 

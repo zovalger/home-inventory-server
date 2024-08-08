@@ -34,4 +34,8 @@ export enum ResMessages {
 
   rejecteInvitation = 'The invitations is rejected',
   invitationIsNotActive = "The invitation isn't active",
+
+  // ************************** products **************************
+
+  productAlreadyExist = 'the product already exist',
 }

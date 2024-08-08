@@ -9,24 +9,30 @@ import {
   MinLength,
 } from 'class-validator';
 import { UnitOfMeasurement } from '../interfaces';
+import { Transform } from 'class-transformer';
 
 export class CreateProductDto {
   @IsString()
+  @Transform(({ value }) => value.trim())
   @MinLength(1)
   name: string;
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => value.trim())
+  @MinLength(1)
   brand?: string;
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => value.trim())
+  @MinLength(1)
   model?: string;
 
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  currentQuantity?: number;
+  // @IsOptional()
+  // @IsNumber()
+  // @Min(0)
+  // currentQuantity?: number;
 
   @IsOptional()
   @IsNumber()

@@ -17,7 +17,7 @@ import { UpdateFamilyDto } from './dto/update-family.dto';
 import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto';
 
 import { FilesService } from 'src/files/files.service';
-import { ResMessages } from 'src/config/res-messages';
+import { ResMessages } from 'src/common/res-messages/res-messages';
 import { EmailService } from 'src/email/email.service';
 import { UpdateRoleMemberDto } from './dto';
 import { AllUserData } from 'src/common/interfaces';

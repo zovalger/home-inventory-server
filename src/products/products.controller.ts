@@ -6,6 +6,7 @@ import {
   Query,
   Patch,
   Param,
+  Delete,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
@@ -51,14 +52,21 @@ export class ProductsController {
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
     @GetUser() user: User,
+    @GetUserFamily() userFamily: Family,
   ) {
     return this.productsService.update(id, updateProductDto, {
       user,
+      userFamily,
     });
   }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.productsService.remove(+id);
-  // }
+  @Delete(':id')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  moveToTrash(
+    @Param('id') id: string,
+    @GetUser() user: User,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productsService.moveToTrash(id, { user, userFamily });
+  }
 }

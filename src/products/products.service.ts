@@ -5,16 +5,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { Brackets, DataSource, In, Or, QueryRunner, Repository } from 'typeorm';
 
 import { AllUserData } from 'src/common/interfaces';
 import { Product, ProductEquivalence, ProductTransaction } from './entities';
 import {
   CreateProductDto,
+  CreateProductEquivalenceDto,
   CreateProductTransactionDto,
   UpdateProductDto,
 } from './dto';
-import { ProductTransactionType, SimpleAddTransaction } from './interfaces';
+import {
+  ProductStatus,
+  ProductTransactionType,
+  SimpleAddTransaction,
+} from './interfaces';
 import { ResMessages } from 'src/common/res-messages/res-messages';
 import { QueryProductDto } from './dto/query-product.dto';
 import { FamilyService } from 'src/family/family.service';
@@ -53,7 +58,10 @@ export class ProductsService {
       .getOne();
 
     if (otherProduct)
-      throw new BadRequestException(ResMessages.productAlreadyExist);
+      throw new BadRequestException({
+        message: ResMessages.productAlreadyExist,
+        data: otherProduct,
+      });
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -90,20 +98,43 @@ export class ProductsService {
   }
 
   async findAll(familyId: string, queryProductDto: QueryProductDto) {
-    const { limit = 10, offset = 0, name = '' } = queryProductDto;
-
-    console.log(name);
+    const {
+      limit = 10,
+      offset = 0,
+      name = '',
+      brand = '',
+      status = ProductStatus.active,
+      lowStock,
+    } = queryProductDto;
 
     const products = await this.productRepository
       .createQueryBuilder('product')
       .where('product.familyId=:familyId', { familyId })
-      .andWhere('UPPER(product.name) LIKE :name', { name: `%${name}%` })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('UPPER(product.name) LIKE :name', {
+            name: `%${name}%`,
+          }).andWhere('product.status=:status', { status });
+
+          if (brand)
+            qb.andWhere('UPPER(product.brand) LIKE :brand', {
+              brand: `%${brand}%`,
+            });
+
+          if (lowStock)
+            qb.andWhere('product."currentQuantity"<=product."minQuantity"');
+        }),
+      )
       .orderBy({ name: 'ASC' })
       .take(limit)
       .skip(offset)
       .getMany();
 
     return products;
+  }
+
+  async findByIds(ids: string[]) {
+    return await this.productRepository.findBy({ id: In(ids) });
   }
 
   // findOne(id: number) {
@@ -113,20 +144,16 @@ export class ProductsService {
   async update(
     id: string,
     updateProductDto: UpdateProductDto,
-    { user }: Pick<AllUserData, 'user'>,
+    { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
   ) {
     const product = await this.productRepository.preload({
       id,
       ...updateProductDto,
     });
 
-    const isMember = !(await this.familyService.isMemberOfThisFamily(
-      user.id,
-      product.familyId,
-    ));
-    if (!isMember)
-      throw new BadRequestException(ResMessages.UserUnauthorizedToFamily);
     // ver si es de la misma familia
+    if (product.familyId != userFamily.id)
+      throw new BadRequestException(ResMessages.UserUnauthorizedToFamily);
 
     try {
       await this.productRepository.save(product);
@@ -137,9 +164,89 @@ export class ProductsService {
     }
   }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} product`;
-  // }
+  async moveToTrash(
+    id: string,
+    { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
+  ) {
+    const product = await this.productRepository.findOneBy({ id });
+
+    if (product.familyId != userFamily.id)
+      throw new BadRequestException(ResMessages.UserUnauthorizedToFamily);
+
+    await this.productRepository.update(
+      { id },
+      { status: ProductStatus.delete },
+    );
+
+    return;
+  }
+
+  // ************************************************************
+  //                        equivalencias
+  // ************************************************************
+
+  async addEquivalence(
+    createProductEquivalenceDto: CreateProductEquivalenceDto,
+    { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
+  ) {
+    const { fromId, toId, equal } = createProductEquivalenceDto;
+
+    // todo: ver si los productos existen buscar productos
+    const products = await this.findByIds([fromId, toId]);
+
+    if (products.length < 2)
+      throw new NotFoundException(ResMessages.productsNotFound);
+
+    const from = products.find((p) => (p.id = fromId));
+    const to = products.find((p) => (p.id = toId));
+
+    if (from.familyId != to.familyId)
+      throw new BadRequestException(ResMessages.productsAreDifferentFamily);
+
+    if (from.familyId != userFamily.id)
+      throw new BadRequestException(ResMessages.UserUnauthorizedToFamily);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    const equivalece = this.productEquivalenceRepository.create({
+      fromId,
+      toId,
+      equal,
+    });
+
+    try {
+      await this.validateEquivalenceLevel(fromId, toId);
+
+      await queryRunner.manager.save(equivalece);
+
+      // calcular la cuenta indirecta del hijo
+
+      // sumar todos los padres mas los padres de los padres
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return equivalece;
+    } catch (error) {
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      this.handleDBError(error);
+    }
+  }
+
+  async validateEquivalenceLevel(fromId: string, toId: string) {
+    const relations = await this.productEquivalenceRepository.find({
+      where: [{ fromId: toId }, { toId: fromId }],
+    });
+
+    if (relations.length >= 2)
+      throw new BadRequestException(
+        ResMessages.productsHasManyLevelsEquivalences,
+      );
+  }
 
   // ************************************************************
   //                    transacciones

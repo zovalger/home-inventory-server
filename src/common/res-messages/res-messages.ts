@@ -38,4 +38,8 @@ export enum ResMessages {
   // ************************** products **************************
 
   productAlreadyExist = 'the product already exist',
+  productsNotFound = 'the one the products are not founds',
+  productsAreDifferentFamily = 'The products are from different family groups',
+
+  productsHasManyLevelsEquivalences = 'the products have more levels of equivalences than allowed',
 }

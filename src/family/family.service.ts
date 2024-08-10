@@ -249,25 +249,26 @@ export class FamilyService {
 
     const member = await this.getMember_by_id(memberId);
 
-    if (role == FamilyRoles.children)
-      throw new ForbiddenException(ResMessages.UserForbidden);
-
     // si no es el dueño solo puede eliminarse a si mismo
-    if (user.id == member.userId && role != FamilyRoles.ouwner) {
+    if (role != FamilyRoles.ouwner) {
+      if (user.id != member.userId)
+        throw new ForbiddenException(ResMessages.UserForbidden);
+
       const result = await this.familyMemberRepository.delete({ id: memberId });
-      return result;
+      return { success: !!result.affected };
     }
 
     // es de la misma familia?
     if (familyId != member.familyId)
       throw new ForbiddenException(ResMessages.UserUnauthorizedToFamily);
 
-    if (role != FamilyRoles.ouwner)
+    if (user.id == member.userId)
       throw new ForbiddenException(ResMessages.UserForbidden);
 
     try {
       const result = await this.familyMemberRepository.delete({ id: memberId });
-      return result;
+
+      return { success: !!result.affected };
     } catch (error) {
       this.handleDBError(error);
     }
@@ -277,7 +278,6 @@ export class FamilyService {
   //                      invitaciones
   // ************************************************************
 
-  // todo: probar
   async createFamilyInvitations(
     family: Family,
     createFamilyInvitationsDto: CreateFamilyInvitationsDto,
@@ -292,10 +292,9 @@ export class FamilyService {
 
     let guestEmailsToSave = invitations.map((inv) => inv.guestEmail);
 
-    //todo: ver que ya no este en la familia
     const emailsAlreadyMember = (
       await this.familyMemberRepository.find({
-        where: { user: { email: In(guestEmailsToSave) } },
+        where: { user: { email: In(guestEmailsToSave) }, familyId: family.id },
         relations: { user: true },
         select: { user: { email: true } },
       })
@@ -309,7 +308,6 @@ export class FamilyService {
       return !isMember;
     });
 
-    // todo: ver si tiene invitacion pendiente
     const oldInvitations = (
       await this.familyMemberInvitationRepository.find({
         where: {

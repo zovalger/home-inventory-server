@@ -61,7 +61,6 @@ export class FamilyController {
     return this.familyService.getMembers(familyId);
   }
 
-  // todo: por probar
   @Patch('members/:id')
   @Auth({ familyRole: [FamilyRoles.ouwner] })
   changeMemberRole(
@@ -77,7 +76,9 @@ export class FamilyController {
   }
 
   @Delete('members/:id')
-  @Auth()
+  @Auth({
+    familyRole: [FamilyRoles.ouwner, FamilyRoles.admin, FamilyRoles.adult],
+  })
   deleteMember(
     @Param('id', new ParseUUIDPipe()) memberId: string,
     @GetUser() user: User,

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, In, Or, QueryRunner, Repository } from 'typeorm';
+import { Brackets, DataSource, In, QueryRunner, Repository } from 'typeorm';
 
 import { AllUserData } from 'src/common/interfaces';
 import { Product, ProductEquivalence, ProductTransaction } from './entities';
@@ -45,15 +45,22 @@ export class ProductsService {
     createProductDto: CreateProductDto,
     { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
   ) {
-    // const { currentQuantity, ...productData } = createProductDto;
+    const { name, brand, model } = createProductDto;
+
     const { id: createById } = user;
     const { id: familyId } = userFamily;
 
     const otherProduct = await this.productRepository
       .createQueryBuilder()
-      .where('UPPER(name)=:name AND "familyId"=:familyId', {
-        name: createProductDto.name.toUpperCase(),
+      .where('"familyId"=:familyId', {
         familyId,
+      })
+      .andWhere('UPPER(name)=:name', { name: name.toUpperCase() })
+      .andWhere(brand ? 'UPPER(brand)=:brand' : 'brand IS NULL', {
+        brand: brand && brand.toUpperCase(),
+      })
+      .andWhere(model ? 'UPPER(model)=:model' : 'model IS NULL', {
+        model: model && model.toUpperCase(),
       })
       .getOne();
 
@@ -75,16 +82,6 @@ export class ProductsService {
     try {
       await queryRunner.manager.save(product);
 
-      // if (currentQuantity)
-      //   await this.createTransaction_add_by_queryRunner(
-      //     {
-      //       quantity: currentQuantity,
-      //       productId: product.id,
-      //       createById: user.id,
-      //     },
-      //     queryRunner,
-      //   );
-
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
@@ -103,6 +100,7 @@ export class ProductsService {
       offset = 0,
       name = '',
       brand = '',
+      model = '',
       status = ProductStatus.active,
       lowStock,
     } = queryProductDto;
@@ -113,12 +111,17 @@ export class ProductsService {
       .andWhere(
         new Brackets((qb) => {
           qb.where('UPPER(product.name) LIKE :name', {
-            name: `%${name}%`,
+            name: `%${name.toUpperCase()}%`,
           }).andWhere('product.status=:status', { status });
 
           if (brand)
             qb.andWhere('UPPER(product.brand) LIKE :brand', {
-              brand: `%${brand}%`,
+              brand: `%${brand.toUpperCase()}%`,
+            });
+
+          if (model)
+            qb.andWhere('UPPER(product.model) LIKE :model', {
+              model: `%${model.toUpperCase()}%`,
             });
 
           if (lowStock)
@@ -146,6 +149,17 @@ export class ProductsService {
     updateProductDto: UpdateProductDto,
     { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
   ) {
+    const { name, brand, model } = updateProductDto;
+
+    const [otherProduct] = await this.findAll(userFamily.id, {
+      name,
+      brand,
+      model,
+    });
+
+    if (otherProduct)
+      throw new BadRequestException(ResMessages.productAlreadyExist);
+
     const product = await this.productRepository.preload({
       id,
       ...updateProductDto,

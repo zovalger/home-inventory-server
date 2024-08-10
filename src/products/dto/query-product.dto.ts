@@ -24,10 +24,17 @@ export class QueryProductDto extends PaginationDto {
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => value.trim().toUpperCase())
+  @MinLength(1)
+  model?: string;
+
+  @IsOptional()
+  @IsString()
   @IsIn(Object.values(ProductStatus))
   status?: ProductStatus;
 
   @IsOptional()
+  @Transform(({ value }) => !!value)
   @IsBoolean()
   lowStock?: boolean;
 }

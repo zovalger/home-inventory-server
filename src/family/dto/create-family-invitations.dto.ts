@@ -7,9 +7,11 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { FamilyRoles } from '../interfaces';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class FamilyInvitationDto {
+  @IsString()
+  @Transform(({ value }) => value.trim().toLocaleLowerCase())
   @IsEmail()
   guestEmail: string;
 

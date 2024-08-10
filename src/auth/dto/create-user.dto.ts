@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsString,
   MinLength,
@@ -9,15 +10,18 @@ import {
 
 export class CreateUserDto {
   @IsString()
+  @Transform(({ value }) => value.trim())
   @MinLength(1)
   name: string;
 
   @IsOptional()
   @IsString()
-  // @MinLength(1)
+  @Transform(({ value }) => value.trim())
+  @MinLength(1)
   lastName?: string;
 
   @IsEmail()
+  @Transform(({ value }) => value.trim().toLocaleLowerCase())
   email: string;
 
   @IsString()

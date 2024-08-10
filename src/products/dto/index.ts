@@ -1,3 +1,5 @@
+export { UpdateProductEquivalenceDto } from './update-product-equivalence.dto';
+
 export { CreateProductEquivalenceDto } from './create-product-equivalence.dto';
 
 export { QueryProductDto } from './query-product.dto';

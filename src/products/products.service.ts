@@ -14,6 +14,7 @@ import {
   CreateProductEquivalenceDto,
   CreateProductTransactionDto,
   UpdateProductDto,
+  UpdateProductEquivalenceDto,
 } from './dto';
 import {
   ProductStatus,
@@ -140,9 +141,13 @@ export class ProductsService {
     return await this.productRepository.findBy({ id: In(ids) });
   }
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} product`;
-  // }
+  async findById(id: string) {
+    const product = await this.productRepository.findOneBy({ id });
+
+    if (!product) throw new NotFoundException(ResMessages.productsNotFound);
+
+    return product;
+  }
 
   async update(
     id: string,
@@ -200,19 +205,20 @@ export class ProductsService {
   // ************************************************************
 
   async addEquivalence(
+    productId: string,
     createProductEquivalenceDto: CreateProductEquivalenceDto,
     { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
   ) {
-    const { fromId, toId, equal } = createProductEquivalenceDto;
+    const { fromId, equal } = createProductEquivalenceDto;
 
     // todo: ver si los productos existen buscar productos
-    const products = await this.findByIds([fromId, toId]);
+    const products = await this.findByIds([fromId, productId]);
 
     if (products.length < 2)
       throw new NotFoundException(ResMessages.productsNotFound);
 
     const from = products.find((p) => (p.id = fromId));
-    const to = products.find((p) => (p.id = toId));
+    const to = products.find((p) => (p.id = productId));
 
     if (from.familyId != to.familyId)
       throw new BadRequestException(ResMessages.productsAreDifferentFamily);
@@ -226,18 +232,16 @@ export class ProductsService {
 
     const equivalece = this.productEquivalenceRepository.create({
       fromId,
-      toId,
+      toId: productId,
       equal,
     });
 
     try {
-      await this.validateEquivalenceLevel(fromId, toId);
+      await this.validateEquivalenceLevel(fromId, productId);
 
       await queryRunner.manager.save(equivalece);
 
-      // calcular la cuenta indirecta del hijo
-
-      // sumar todos los padres mas los padres de los padres
+      await this.calculateRelativeQuantity(fromId);
 
       await queryRunner.commitTransaction();
       await queryRunner.release();
@@ -251,20 +255,207 @@ export class ProductsService {
     }
   }
 
-  async validateEquivalenceLevel(fromId: string, toId: string) {
-    const relations = await this.productEquivalenceRepository.find({
-      where: [{ fromId: toId }, { toId: fromId }],
+  async getEquivalences({ userFamily }: Pick<AllUserData, 'userFamily'>) {
+    const { id: familyId } = userFamily;
+
+    return await this.productEquivalenceRepository.find({
+      where: { from: { familyId } },
+    });
+  }
+
+  async getProductEquivalences(
+    productId: string,
+    { userFamily }: Pick<AllUserData, 'userFamily'>,
+  ) {
+    const { id: familyId } = userFamily;
+
+    return await this.productEquivalenceRepository
+      .createQueryBuilder('eq')
+      .where({ from: { familyId } })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('eq."fromId"=:fromId', { fromId: productId }).orWhere(
+            'eq."fromId"=:fromId',
+            { toId: productId },
+          );
+        }),
+      );
+  }
+
+  async updateEquivalence(
+    eqId: string,
+    updateProductEquivalenceDto: UpdateProductEquivalenceDto,
+    { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
+  ) {
+    const { fromId, equal } = updateProductEquivalenceDto;
+
+    if (!fromId && !equal) throw new BadRequestException();
+
+    const eq = await this.productEquivalenceRepository.findOne({
+      where: { id: eqId },
+      relations: { from: true },
     });
 
-    if (relations.length >= 2)
+    if (!eq) throw new NotFoundException(ResMessages.NotFound);
+
+    const { familyId: eqFamilyId } = eq.from;
+
+    if (eqFamilyId != userFamily.id)
+      throw new BadRequestException(ResMessages.UserUnauthorizedToFamily);
+
+    if (fromId) {
+      const product = await this.findById(fromId);
+
+      if (product.familyId != userFamily.id)
+        throw new BadRequestException(ResMessages.productsAreDifferentFamily);
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    if (equal) eq.equal = equal;
+    if (fromId) eq.fromId = fromId;
+
+    try {
+      await this.validateEquivalenceLevel(fromId, eq.toId);
+
+      await queryRunner.manager.save(eq);
+
+      await this.calculateRelativeQuantity(fromId);
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return eq;
+    } catch (error) {
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      this.handleDBError(error);
+    }
+  }
+
+  async deleteEquivalence(
+    eqId: string,
+    { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
+  ) {
+    const eq = await this.productEquivalenceRepository.findOne({
+      where: { id: eqId },
+      relations: { from: true, to: true },
+    });
+
+    if (!eq) throw new NotFoundException(ResMessages.NotFound);
+
+    const { from, to } = eq;
+
+    const { familyId } = from;
+
+    if (familyId != userFamily.id)
+      throw new BadRequestException(ResMessages.UserUnauthorizedToFamily);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.delete(ProductEquivalence, { id: eq.id });
+
+      await this.calculateRelativeQuantity(from.id);
+      await this.calculateRelativeQuantity(to.id);
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return eq;
+    } catch (error) {
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      this.handleDBError(error);
+    }
+  }
+
+  async validateEquivalenceLevel(fromId: string, toId: string) {
+    const childRelations = await this.productEquivalenceRepository.find({
+      where: [
+        // que el from no tenga otro hijo
+        { fromId },
+        // que el to no tenga otro padre
+        { toId },
+      ],
+    });
+
+    if (childRelations.length)
+      throw new BadRequestException(
+        ResMessages.productsHasManyLevelsEquivalences,
+      );
+
+    const parentRelations = await this.productEquivalenceRepository.find({
+      where: [
+        // donde el padre sea to
+        { fromId: toId },
+        // donde el hijo sea from
+        { toId: fromId },
+      ],
+    });
+
+    if (parentRelations.length >= 2)
+      throw new BadRequestException(
+        ResMessages.productsHasManyLevelsEquivalences,
+      );
+
+    const { fromId: fromIdOther, toId: toIdOther } = parentRelations[0];
+
+    if (fromIdOther == toId || toIdOther == fromId)
       throw new BadRequestException(
         ResMessages.productsHasManyLevelsEquivalences,
       );
   }
 
+  async calculateRelativeQuantity(productId: string) {
+    const eq = await this.productEquivalenceRepository.findOne({
+      where: [{ fromId: productId }],
+      relations: { from: true, to: { productEq_From: { to: true } } },
+    });
+
+    if (!eq) return;
+
+    const parent = await this.productEquivalenceRepository.findOne({
+      where: [{ toId: productId }],
+    });
+
+    const { from, to, equal } = eq;
+
+    const product1 = from;
+    const product2 = to;
+
+    if (!parent) product1.relativeQuantity = 0;
+
+    const sum1 = product1.relativeQuantity + product1.currentQuantity;
+    product2.relativeQuantity = sum1 * equal;
+
+    const toSave = [product1, product2];
+
+    if (product2.productEq_From) {
+      const { to: product3, equal: equal2 } = to.productEq_From;
+
+      const sum2 = product2.currentQuantity + product2.relativeQuantity;
+      product3.currentQuantity = sum2 * equal2;
+
+      toSave.push(product3);
+    }
+
+    await this.productRepository.save(toSave);
+  }
+
   // ************************************************************
   //                    transacciones
   // ************************************************************
+
+  // async createTransaction(){
+
+  // }
 
   async createTransaction_by_queryRunner(
     createProductTransactionDto: CreateProductTransactionDto,

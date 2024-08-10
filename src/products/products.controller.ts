@@ -15,7 +15,12 @@ import { User } from 'src/auth/entities';
 import { FamilyRoles } from 'src/family/interfaces';
 import { GetUserFamily } from 'src/family/decorators';
 import { Family } from 'src/family/entities';
-import { CreateProductDto, UpdateProductDto } from './dto';
+import {
+  CreateProductDto,
+  CreateProductEquivalenceDto,
+  UpdateProductDto,
+  UpdateProductEquivalenceDto,
+} from './dto';
 import { QueryProductDto } from './dto/query-product.dto';
 
 @Controller('products')
@@ -46,27 +51,99 @@ export class ProductsController {
   //   return this.productsService.findOne(+id);
   // }
 
-  @Patch(':id')
+  @Patch(':productId')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   update(
-    @Param('id') id: string,
+    @Param('productId') productId: string,
     @Body() updateProductDto: UpdateProductDto,
     @GetUser() user: User,
     @GetUserFamily() userFamily: Family,
   ) {
-    return this.productsService.update(id, updateProductDto, {
+    return this.productsService.update(productId, updateProductDto, {
       user,
       userFamily,
     });
   }
 
-  @Delete(':id')
+  @Delete(':productId')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   moveToTrash(
-    @Param('id') id: string,
+    @Param('productId') productId: string,
     @GetUser() user: User,
     @GetUserFamily() userFamily: Family,
   ) {
-    return this.productsService.moveToTrash(id, { user, userFamily });
+    return this.productsService.moveToTrash(productId, { user, userFamily });
+  }
+
+  // ************************************************************
+  //                        equivalencias
+  // ************************************************************
+
+  @Post(':productId/equivalences')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  addEquivalences(
+    @Param('productId') productId: string,
+    @Body() createProductEquivalenceDto: CreateProductEquivalenceDto,
+    @GetUser() user: User,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productsService.addEquivalence(
+      productId,
+      createProductEquivalenceDto,
+      {
+        user,
+        userFamily,
+      },
+    );
+  }
+
+  @Get(':productId/equivalences')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  getProductEquivalences(
+    @Param('productId') productId: string,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productsService.getProductEquivalences(productId, {
+      userFamily,
+    });
+  }
+
+  @Get('equivalences')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  getEquivalences(@GetUserFamily() userFamily: Family) {
+    return this.productsService.getEquivalences({
+      userFamily,
+    });
+  }
+
+  @Patch('equivalences/:eqId')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  updateProductEquivalences(
+    @Param('eqId') eqId: string,
+    @Body() updateProductEquivalenceDto: UpdateProductEquivalenceDto,
+    @GetUser() user: User,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productsService.updateEquivalence(
+      eqId,
+      updateProductEquivalenceDto,
+      {
+        user,
+        userFamily,
+      },
+    );
+  }
+
+  @Delete('equivalences/:eqId')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  deleteProductEquivalence(
+    @Param('eqId') eqId: string,
+    @GetUser() user: User,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productsService.deleteEquivalence(eqId, {
+      user,
+      userFamily,
+    });
   }
 }

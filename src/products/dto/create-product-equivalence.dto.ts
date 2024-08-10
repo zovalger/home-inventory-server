@@ -8,6 +8,6 @@ export class CreateProductEquivalenceDto {
   @IsUUID()
   fromId: string;
 
-  @IsUUID()
-  toId: string;
+  // @IsUUID()
+  // toId: string;
 }

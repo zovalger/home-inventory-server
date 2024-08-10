@@ -1,4 +1,8 @@
 export enum ResMessages {
+  // ************************** genericos **************************
+
+  NotFound = 'Not found',
+
   // ************************** files **************************
   ImageNotFound = "The image isn't registed in DB",
 

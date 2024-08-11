@@ -18,6 +18,7 @@ import { Family } from 'src/family/entities';
 import {
   CreateProductDto,
   CreateProductEquivalenceDto,
+  CreateProductTransactionDto,
   UpdateProductDto,
   UpdateProductEquivalenceDto,
 } from './dto';
@@ -138,5 +139,27 @@ export class ProductsController {
     return this.productsService.deleteEquivalence(eqId, {
       userFamily,
     });
+  }
+
+  // ************************************************************
+  //                        transaction
+  // ************************************************************
+
+  @Post(':productId/transaction')
+  @Auth()
+  createTransaction(
+    @Param('productId') productId: string,
+    @Body() createProductTransactionDto: CreateProductTransactionDto,
+    @GetUser() user: User,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productsService.createTransaction(
+      productId,
+      createProductTransactionDto,
+      {
+        user,
+        userFamily,
+      },
+    );
   }
 }

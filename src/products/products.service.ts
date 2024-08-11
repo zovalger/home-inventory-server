@@ -20,7 +20,7 @@ import {
 import {
   ProductStatus,
   ProductTransactionType,
-  SimpleAddTransaction,
+  TransactionFuctionParams,
 } from './interfaces';
 import { ResMessages } from 'src/common/res-messages/res-messages';
 import { QueryProductDto } from './dto/query-product.dto';
@@ -472,8 +472,127 @@ export class ProductsService {
   //                    transacciones
   // ************************************************************
 
-  // async createTransaction(){
+  async createTransaction(
+    productId: string,
+    createProductTransactionDto: CreateProductTransactionDto,
+    { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
+  ) {
+    const { type } = createProductTransactionDto;
 
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    const product = await this.findById(productId);
+
+    if (product.familyId != userFamily.id)
+      throw new ForbiddenException(ResMessages.UserForbiddenToFamily);
+
+    try {
+      let transaction = null;
+
+      const params: TransactionFuctionParams = {
+        createById: user.id,
+        product,
+        createProductTransactionDto,
+        queryRunner,
+      };
+
+      // realizar operacion segun el tipo de transaccion
+      if (type == ProductTransactionType.add)
+        transaction = await this.createTransaction_add_by_queryRunner(params);
+
+      // if (type == ProductTransactionType.subtract)
+      //   transaction =
+      //     await this.createTransaction_sustract_by_queryRunner(params);
+
+      // if (type == ProductTransactionType.restock)
+      //   transaction =
+      //     await this.createTransaction_restock_by_queryRunner(params);
+
+      //
+      await queryRunner.commitTransaction();
+
+      await queryRunner.release();
+
+      return transaction as ProductTransaction;
+    } catch (error) {
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      this.handleDBError(error);
+    }
+  }
+
+  async createTransaction_add_by_queryRunner(
+    transactionFuctionParams: TransactionFuctionParams,
+  ): Promise<ProductTransaction> {
+    const { createById, product, createProductTransactionDto, queryRunner } =
+      transactionFuctionParams;
+
+    const { currentQuantity } = product;
+    const { quantity } = createProductTransactionDto;
+
+    const data = {
+      ...createProductTransactionDto,
+      productId: product.id,
+      createById,
+      type: ProductTransactionType.add,
+      remainder: quantity,
+    };
+
+    const transaction = this.productTransactionRepository.create(data);
+    await queryRunner.manager.save(transaction);
+
+    product.currentQuantity = currentQuantity + quantity;
+
+    await queryRunner.manager.save(product);
+
+    await this.calculateRelativeQuantity_by_queryRunner(
+      product.id,
+      queryRunner,
+    );
+
+    return transaction;
+  }
+  // sustract
+
+  // async createTransaction_sustract_by_queryRunner(
+  //   transactionFuctionParams: TransactionFuctionParams,
+  // ): Promise<ProductTransaction> {
+  //   const { createById, productId, createProductTransactionDto, queryRunner } =
+  //     transactionFuctionParams;
+  //   // return await this.createTransaction_by_queryRunner(
+  //   //   {
+  //   //     type: ProductTransactionType.add,
+  //   //     quantity: quantity,
+  //   //     remainder: quantity,
+  //   //     productId,
+  //   //     createById,
+  //   //     expirationDate: null,
+  //   //     transactionRefId: null,
+  //   //   },
+  //   //   queryRunner,
+  //   // );
+  // }
+
+  // async createTransaction_restock_by_queryRunner(
+  //   transactionFuctionParams: TransactionFuctionParams,
+  // ): Promise<ProductTransaction> {
+  //   const { createById, productId, createProductTransactionDto, queryRunner } =
+  //     transactionFuctionParams;
+  //   // return await this.createTransaction_by_queryRunner(
+  //   //   {
+  //   //     type: ProductTransactionType.add,
+  //   //     quantity: quantity,
+  //   //     remainder: quantity,
+  //   //     productId,
+  //   //     createById,
+  //   //     expirationDate: null,
+  //   //     transactionRefId: null,
+  //   //   },
+  //   //   queryRunner,
+  //   // );
   // }
 
   async createTransaction_by_queryRunner(
@@ -487,24 +606,6 @@ export class ProductsService {
     await queryRunner.manager.save(transaction);
 
     return transaction;
-  }
-
-  async createTransaction_add_by_queryRunner(
-    { quantity, productId, createById }: SimpleAddTransaction,
-    queryRunner: QueryRunner,
-  ) {
-    return await this.createTransaction_by_queryRunner(
-      {
-        type: ProductTransactionType.add,
-        quantity: quantity,
-        remainder: quantity,
-        productId,
-        createById,
-        expirationDate: null,
-        transactionToSustractId: null,
-      },
-      queryRunner,
-    );
   }
 
   handleDBError(error: any) {

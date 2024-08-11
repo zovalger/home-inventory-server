@@ -34,7 +34,7 @@ export class ProductTransaction {
   productId: string;
 
   @Column('text', { nullable: true })
-  transactionToSustractId: string;
+  transactionRefId: string;
 
   @Column('text', { nullable: false })
   createById: string;
@@ -45,7 +45,7 @@ export class ProductTransaction {
   product: Product;
 
   @ManyToOne(() => ProductTransaction)
-  transactionToSustract: ProductTransaction;
+  transactionRef: ProductTransaction;
 
   @ManyToOne(() => User, (user) => user.id, { nullable: false })
   createBy: User;

@@ -46,4 +46,5 @@ export enum ResMessages {
   productsAreDifferentFamily = 'The products are from different family groups',
 
   productsHasManyLevelsEquivalences = 'the products have more levels of equivalences than allowed',
+  productsHasCircularEquivalences = "the products have and circular equivalences, isn't allowed",
 }

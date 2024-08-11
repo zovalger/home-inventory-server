@@ -46,21 +46,20 @@ export class ProductsController {
     return this.productsService.findAll(userFamilyId, queryProductDto);
   }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.productsService.findOne(+id);
-  // }
+  @Get(':productId')
+  @Auth()
+  findOne(@Param('productId') id: string, @GetUserFamily() userFamily: Family) {
+    return this.productsService.getProduct(id, { userFamily });
+  }
 
   @Patch(':productId')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   update(
     @Param('productId') productId: string,
     @Body() updateProductDto: UpdateProductDto,
-    @GetUser() user: User,
     @GetUserFamily() userFamily: Family,
   ) {
     return this.productsService.update(productId, updateProductDto, {
-      user,
       userFamily,
     });
   }
@@ -72,7 +71,7 @@ export class ProductsController {
     @GetUser() user: User,
     @GetUserFamily() userFamily: Family,
   ) {
-    return this.productsService.moveToTrash(productId, { user, userFamily });
+    return this.productsService.moveToTrash(productId, { userFamily });
   }
 
   // ************************************************************
@@ -84,14 +83,12 @@ export class ProductsController {
   addEquivalences(
     @Param('productId') productId: string,
     @Body() createProductEquivalenceDto: CreateProductEquivalenceDto,
-    @GetUser() user: User,
     @GetUserFamily() userFamily: Family,
   ) {
     return this.productsService.addEquivalence(
       productId,
       createProductEquivalenceDto,
       {
-        user,
         userFamily,
       },
     );
@@ -121,14 +118,12 @@ export class ProductsController {
   updateProductEquivalences(
     @Param('eqId') eqId: string,
     @Body() updateProductEquivalenceDto: UpdateProductEquivalenceDto,
-    @GetUser() user: User,
     @GetUserFamily() userFamily: Family,
   ) {
     return this.productsService.updateEquivalence(
       eqId,
       updateProductEquivalenceDto,
       {
-        user,
         userFamily,
       },
     );
@@ -138,11 +133,9 @@ export class ProductsController {
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   deleteProductEquivalence(
     @Param('eqId') eqId: string,
-    @GetUser() user: User,
     @GetUserFamily() userFamily: Family,
   ) {
     return this.productsService.deleteEquivalence(eqId, {
-      user,
       userFamily,
     });
   }

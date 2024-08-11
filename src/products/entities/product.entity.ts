@@ -7,6 +7,7 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -75,13 +76,13 @@ export class Product {
   family: Family;
 
   // donde el producto es padre
-  @OneToMany(() => ProductEquivalence, (productEq) => productEq.from, {
+  @OneToOne(() => ProductEquivalence, (productEq) => productEq.from, {
     eager: true,
   })
   productEq_From: ProductEquivalence;
 
   // donde el producto es hijo
-  @OneToMany(() => ProductEquivalence, (productEq) => productEq.to, {
+  @OneToOne(() => ProductEquivalence, (productEq) => productEq.to, {
     eager: true,
   })
   productEq_To: ProductEquivalence;

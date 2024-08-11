@@ -2,7 +2,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -27,10 +28,12 @@ export class ProductEquivalence {
 
   // ****************** relaciones ******************
 
-  @ManyToOne(() => Product, (product) => product.productEq_From)
+  @OneToOne(() => Product, (product) => product.productEq_From)
+  @JoinColumn()
   from: Product;
 
-  @ManyToOne(() => Product, (product) => product.productEq_To)
+  @OneToOne(() => Product, (product) => product.productEq_To)
+  @JoinColumn()
   to: Product;
 
   // ****************** automaticas ******************

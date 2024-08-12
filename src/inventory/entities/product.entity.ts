@@ -1,5 +1,3 @@
-import { User } from 'src/auth/entities';
-import { Family } from 'src/family/entities';
 import {
   Column,
   CreateDateColumn,
@@ -11,11 +9,13 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ProductStatus } from '../interfaces/product-status.enum';
+
+import { User } from '../../auth/entities';
+import { Family } from '../../family/entities';
 import { ProductEquivalence } from './product-equivalence.entity';
-import { UnitOfMeasurement } from '../interfaces';
+import { ProductStatus, UnitOfMeasurement } from '../interfaces';
 import { ProductTransaction } from './product-transaction.entity';
-import { File } from 'src/files/entities';
+import { File } from '../../files/entities';
 
 @Entity('product')
 export class Product {

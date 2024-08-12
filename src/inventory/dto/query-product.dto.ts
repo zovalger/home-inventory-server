@@ -6,8 +6,9 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+
 import { ProductStatus } from '../interfaces';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 export class QueryProductDto extends PaginationDto {
   @IsOptional()

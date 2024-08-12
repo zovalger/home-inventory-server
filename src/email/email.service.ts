@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { EmailSender } from 'src/email/providers/email-sender';
-import { EmailTemplates } from './providers/email-templates';
+
 import { CreateUserEmailDto, SendEmailInviteUserDto } from './dto';
+
+import { EmailTemplates } from './providers/email-templates';
+import { EmailSender } from './providers/email-sender';
 
 @Injectable()
 export class EmailService {
@@ -19,7 +21,6 @@ export class EmailService {
     await this.emailSender.send(user.email, subject, html);
   }
 
-  // todo: crear logica para enviar correos a los invitados
   async sendEmail_InviteUsers(SendEmailInviteUserDto: SendEmailInviteUserDto) {
     const { familyName, createByUserName, invitations } =
       SendEmailInviteUserDto;

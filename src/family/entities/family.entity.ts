@@ -9,8 +9,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import { User } from 'src/auth/entities';
-import { File } from 'src/files/entities';
+import { User } from '../../auth/entities';
+import { File } from '../../files/entities';
 import { FamilyMember } from './family-member.entity';
 
 @Entity('family')

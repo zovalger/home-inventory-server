@@ -9,18 +9,21 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 
-import { FamilyService } from './family.service';
-import { CreateFamilyDto } from './dto/create-family.dto';
-import { UpdateFamilyDto } from './dto/update-family.dto';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/auth/entities';
-import { Auth } from 'src/auth/decorators/auth.decorator';
-import { FamilyRoles } from './interfaces';
-import { GetUserFamily } from './decorators/get-user-family.decorator';
+import { User } from '../auth/entities';
 import { Family, FamilyMember } from './entities';
-import { CreateFamilyInvitationsDto } from './dto/create-family-invitations.dto';
-import { UpdateRoleMemberDto } from './dto';
-import { GetUserFamilyMember } from './decorators/get-user-family-member.decorator';
+
+import { Auth, GetUser, GetUserFamily } from '../auth/decorators';
+import { GetUserFamilyMember } from './decorators';
+
+import { FamilyRoles } from './interfaces';
+import {
+  CreateFamilyDto,
+  CreateFamilyInvitationsDto,
+  UpdateFamilyDto,
+  UpdateRoleMemberDto,
+} from './dto';
+
+import { FamilyService } from './family.service';
 
 @Controller('family')
 export class FamilyController {

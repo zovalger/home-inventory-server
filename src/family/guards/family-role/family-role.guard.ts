@@ -7,24 +7,24 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Observable } from 'rxjs';
 
-import { User } from 'src/auth/entities';
-import { ResMessages } from 'src/common/res-messages/res-messages';
+import { User } from '../../../auth/entities';
+
 import { META_FAMILY_ROLES } from 'src/family/decorators/family-role-protected.decorator';
-import { Family, FamilyMember } from 'src/family/entities';
-import { FamilyRoles } from 'src/family/interfaces';
-import { META_MEMBER_FAMILY } from 'src/family/decorators/member-family.decorator';
+import { FamilyMember } from '../../../family/entities';
+import { FamilyRoles } from '../../../family/interfaces';
+import { META_MEMBER_FAMILY } from '../../../family/decorators/member-family.decorator';
+
+import { ResMessages } from '../../../common/providers';
 
 @Injectable()
 export class FamilyRoleGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-
-    @InjectRepository(Family)
-    private readonly familyRepository: Repository<Family>,
+    private readonly resMessages: ResMessages,
 
     @InjectRepository(FamilyMember)
     private readonly familyMemberRepository: Repository<FamilyMember>,
@@ -44,7 +44,8 @@ export class FamilyRoleGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const user = req.user as User;
 
-    if (!user) throw new InternalServerErrorException(ResMessages.UserNotFound);
+    if (!user)
+      throw new InternalServerErrorException(this.resMessages.UserNotFound);
 
     return withoutFamilyMember || this.haveFamilyRole(req, user, familyRoles);
   }
@@ -63,7 +64,7 @@ export class FamilyRoleGuard implements CanActivate {
       relations: { family: true },
     });
 
-    if (!member) throw new ForbiddenException(ResMessages.familyNotFound);
+    if (!member) throw new ForbiddenException(this.resMessages.familyNotFound);
 
     req['family'] = member.family;
     delete member.family;
@@ -73,7 +74,9 @@ export class FamilyRoleGuard implements CanActivate {
     if (!roles.length) return true;
 
     if (!roles.includes(member.role))
-      throw new UnauthorizedException(ResMessages.UserUnauthorizedToFamily);
+      throw new UnauthorizedException(
+        this.resMessages.UserUnauthorizedToFamily,
+      );
 
     return true;
   }

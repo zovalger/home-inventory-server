@@ -8,8 +8,9 @@ import {
   IsUUID,
   ValidateIf,
 } from 'class-validator';
-import { ProductTransactionType } from '../interfaces';
 import { Transform } from 'class-transformer';
+
+import { ProductTransactionType } from '../interfaces';
 
 export class CreateProductTransactionDto {
   @IsString()

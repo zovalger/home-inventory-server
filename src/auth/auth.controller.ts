@@ -1,14 +1,16 @@
 import { Controller, Post, Body, Get, Patch } from '@nestjs/common';
-import { AuthService } from './auth.service';
+
+import { User } from './entities';
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { FormatEmailPipe } from './pipes/format-email/format-email.pipe';
 import { Auth } from './decorators/auth.decorator';
 import { GetUser } from './decorators/get-user.decorator';
-import { User } from './entities';
 import { VerificationCodeDto } from './dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+import { AuthService } from './auth.service';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

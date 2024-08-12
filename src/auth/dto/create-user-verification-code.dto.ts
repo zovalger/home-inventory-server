@@ -1,4 +1,3 @@
-import {} from 'class-validator';
 import { User } from '../entities';
 
 export class CreateUserVerificationCodeDto {

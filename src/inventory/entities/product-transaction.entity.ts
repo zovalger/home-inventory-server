@@ -6,8 +6,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
 import { Product } from './product.entity';
-import { User } from 'src/auth/entities';
+import { User } from '../../auth/entities';
+
 import { ProductTransactionType } from '../interfaces';
 
 @Entity('product_transaction')

@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { CloudinaryService } from './cloudinary/cloudinary.service';
-import { User } from 'src/auth/entities';
-import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { File } from './entities';
+import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
+
+import { User } from '../auth/entities';
+import { File } from './entities';
+
+import { CloudinaryService } from './cloudinary/cloudinary.service';
 
 @Injectable()
 export class FilesService {

@@ -8,8 +8,9 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { UnitOfMeasurement } from '../interfaces';
 import { Transform } from 'class-transformer';
+
+import { UnitOfMeasurement } from '../interfaces';
 
 export class CreateProductDto {
   @IsString()

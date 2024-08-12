@@ -4,7 +4,6 @@ import {
   createParamDecorator,
 } from '@nestjs/common';
 
-import { ResMessages } from 'src/common/res-messages/res-messages';
 import { Family } from '../entities';
 
 export const GetUserFamily = createParamDecorator(
@@ -19,8 +18,7 @@ export const GetUserFamily = createParamDecorator(
     // familia del usuario
     const family = req.family as Family;
 
-    if (!family)
-      throw new InternalServerErrorException(ResMessages.familyNotFound);
+    if (!family) throw new InternalServerErrorException('familyNotFound');
 
     const result = data ? family[data] : family;
 

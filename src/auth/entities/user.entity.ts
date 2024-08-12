@@ -10,8 +10,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import { File } from 'src/files/entities';
-import { FamilyMember } from 'src/family/entities';
+import { File } from '../../files/entities';
+import { FamilyMember } from '../../family/entities';
 
 @Entity('user')
 export class User {

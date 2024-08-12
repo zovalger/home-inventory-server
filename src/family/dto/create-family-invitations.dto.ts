@@ -6,8 +6,9 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { FamilyRoles } from '../interfaces';
 import { Transform, Type } from 'class-transformer';
+
+import { FamilyRoles } from '../interfaces';
 
 export class FamilyInvitationDto {
   @IsString()

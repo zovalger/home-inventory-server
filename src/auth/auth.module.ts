@@ -1,21 +1,24 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { User } from './entities/user.entity';
-import { UserVerificationCode } from './entities/user-verification-code.entity';
-import { EmailModule } from 'src/email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategy/jwt.strategy';
-import { FilesModule } from 'src/files/files.module';
-import { FamilyModule } from 'src/family/family.module';
+
+import { EmailModule } from '../email/email.module';
+
+import { User, UserVerificationCode } from './entities';
+
+import { FilesModule } from '../files/files.module';
+import { FamilyModule } from '../family/family.module';
+import { CommonModule } from '../common/common.module';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 
 @Module({
   imports: [
     ConfigModule,
+    CommonModule,
 
     TypeOrmModule.forFeature([User, UserVerificationCode]),
 

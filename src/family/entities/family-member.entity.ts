@@ -1,7 +1,9 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Family } from './family.entity';
-import { User } from 'src/auth/entities';
+
 import { FamilyRoles } from '../interfaces';
+
+import { User } from '../../auth/entities';
+import { Family } from './family.entity';
 
 @Entity('family_member')
 export class FamilyMember {

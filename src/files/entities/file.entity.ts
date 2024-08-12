@@ -1,4 +1,3 @@
-import { User } from 'src/auth/entities';
 import {
   Column,
   CreateDateColumn,
@@ -7,6 +6,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { User } from '../../auth/entities';
 
 @Entity({ name: 'files' })
 export class File {

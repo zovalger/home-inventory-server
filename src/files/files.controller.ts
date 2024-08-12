@@ -7,11 +7,12 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
 } from '@nestjs/common';
-import { FilesService } from './files.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Auth } from 'src/auth/decorators/auth.decorator';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/auth/entities';
+
+import { FilesService } from './files.service';
+
+import { User } from '../auth/entities';
+import { Auth, GetUser } from '../auth/decorators';
 
 @Controller('files')
 export class FilesController {

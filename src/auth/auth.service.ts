@@ -1,16 +1,15 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
-import { EmailService } from 'src/email/email.service';
 import { UserVerificationCode, User } from './entities';
+
 import { JwtPayload } from './interface';
 import {
   CreateUserDto,
@@ -18,13 +17,18 @@ import {
   LoginUserDto,
   CreateUserVerificationCodeDto,
 } from './dto';
-import { ResMessages } from 'src/common/res-messages/res-messages';
 import { UpdateUserDto } from './dto/update-user.dto';
+
+import { ErrorHandleProvider, ResMessages } from '../common/providers';
+import { EmailService } from '../email/email.service';
 import { FilesService } from 'src/files/files.service';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly resMessages: ResMessages,
+    private readonly errorHandleProvider: ErrorHandleProvider,
+
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
 
@@ -81,7 +85,7 @@ export class AuthService {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
 
-      this.handleDBError(error);
+      this.errorHandleProvider.handle(error);
     }
   }
   // todo: hacer validacion al cambiar de email
@@ -97,7 +101,8 @@ export class AuthService {
 
     if (imageUrl) {
       const existImage = await this.filesService.existImageInDB(imageUrl);
-      if (!existImage) throw new BadRequestException(ResMessages.ImageNotFound);
+      if (!existImage)
+        throw new BadRequestException(this.resMessages.ImageNotFound);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -112,7 +117,8 @@ export class AuthService {
 
       userUpdated.imageUrl = imageUrl !== undefined ? imageUrl : oldImageUrl;
 
-      if (!userUpdated) throw new NotFoundException(ResMessages.UserNotFound);
+      if (!userUpdated)
+        throw new NotFoundException(this.resMessages.UserNotFound);
 
       await queryRunner.manager.save(userUpdated);
 
@@ -130,7 +136,7 @@ export class AuthService {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
 
-      this.handleDBError(error);
+      this.errorHandleProvider.handle(error);
     }
   }
 
@@ -182,7 +188,7 @@ export class AuthService {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
 
-      this.handleDBError(error);
+      this.errorHandleProvider.handle(error);
     }
   }
 
@@ -190,7 +196,7 @@ export class AuthService {
     const { code } = verificationCodeDto;
 
     if (user.isVerified)
-      throw new BadRequestException(ResMessages.UserAlreadyVerified);
+      throw new BadRequestException(this.resMessages.UserAlreadyVerified);
 
     const queryRunner = this.dataSource.createQueryRunner();
 
@@ -231,7 +237,7 @@ export class AuthService {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
 
-      this.handleDBError(error);
+      this.errorHandleProvider.handle(error);
     }
   }
 
@@ -261,15 +267,5 @@ export class AuthService {
     const token = this.jwtService.sign(jwtPayload);
 
     return token;
-  }
-
-  handleDBError(error: any) {
-    if (error.code == '23505')
-      throw new BadRequestException('The user is already register');
-
-    if (error.status == 404) throw new NotFoundException(error.response);
-
-    console.log(error);
-    throw new InternalServerErrorException('Check server logs');
   }
 }

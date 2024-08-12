@@ -6,10 +6,11 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { User } from '../../auth/entities';
 import { Family } from './family.entity';
-import { FamilyRoles } from '../interfaces';
-import { FamilyMemberInvitationStatus } from '../interfaces/family-member-invitation-status.enum';
-import { User } from 'src/auth/entities';
+
+import { FamilyMemberInvitationStatus, FamilyRoles } from '../interfaces';
 
 @Entity('family_member_invitation')
 export class FamilyMemberInvitation {

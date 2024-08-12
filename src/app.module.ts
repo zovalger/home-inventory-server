@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
-
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { EnvConfiguration } from './config/app.config';
 import { JoiValidationsSchema } from './config/joi.validation';
-import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { EmailModule } from './email/email.module';
 import { FilesModule } from './files/files.module';
 import { FamilyModule } from './family/family.module';
-import { ProductsModule } from './products/products.module';
+import { InventoryModule } from './inventory/inventory.module';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { ProductsModule } from './products/products.module';
 
     FamilyModule,
 
-    ProductsModule,
+    InventoryModule,
   ],
   controllers: [],
   providers: [],

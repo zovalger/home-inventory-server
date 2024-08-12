@@ -1,16 +1,19 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AuthModule } from 'src/auth/auth.module';
-import { FilesModule } from 'src/files/files.module';
-
-import { FamilyService } from './family.service';
-import { FamilyController } from './family.controller';
 import { Family, FamilyMember, FamilyMemberInvitation } from './entities';
-import { EmailModule } from 'src/email/email.module';
+
+import { AuthModule } from '../auth/auth.module';
+import { FilesModule } from '../files/files.module';
+import { EmailModule } from '../email/email.module';
+import { CommonModule } from '../common/common.module';
+
+import { FamilyController } from './family.controller';
+import { FamilyService } from './family.service';
 
 @Module({
   imports: [
+    CommonModule,
     forwardRef(() => AuthModule),
     forwardRef(() => FilesModule),
 

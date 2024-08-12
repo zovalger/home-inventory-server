@@ -8,31 +8,13 @@ import { CreateProductTransactionDto, QueryTransactionDto } from '../dto';
 
 import { ProductTransactionsService } from './product-transactions.service';
 
-@Controller()
+@Controller('inventory/transactions')
 export class ProductTransactionsController {
   constructor(
     private readonly productTransactionsService: ProductTransactionsService,
   ) {}
 
-  @Get('transactions')
-  @Auth()
-  getTransactions(
-    @Query() queryTransactionDto: QueryTransactionDto,
-    @GetUserFamily() userFamily: Family,
-  ) {
-    return this.productTransactionsService.getTransactions(
-      queryTransactionDto,
-      {
-        userFamily,
-      },
-    );
-  }
-
-  // ************************************************************
-  //                        transaction
-  // ************************************************************
-
-  @Post(':productId/transactions')
+  @Post(':productId')
   @Auth()
   createTransaction(
     @Param('productId') productId: string,
@@ -50,6 +32,19 @@ export class ProductTransactionsController {
     );
   }
 
+  @Get()
+  @Auth()
+  getTransactions(
+    @Query() queryTransactionDto: QueryTransactionDto,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productTransactionsService.getTransactions(
+      queryTransactionDto,
+      {
+        userFamily,
+      },
+    );
+  }
   // @Get(':productId/transactions')
   // @Auth()
   // getProductTransactions(

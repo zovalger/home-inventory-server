@@ -24,7 +24,7 @@ export class ProductEquivalencesController {
     private readonly productEquivalencesService: ProductEquivalencesService,
   ) {}
 
-  @Post('add/:productId')
+  @Post(':productId')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   addEquivalences(
     @Param('productId') productId: string,
@@ -40,7 +40,7 @@ export class ProductEquivalencesController {
     );
   }
 
-  @Get(':productId/equivalences')
+  @Get(':productId')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   getProductEquivalences(
     @Param('productId') productId: string,
@@ -51,7 +51,7 @@ export class ProductEquivalencesController {
     });
   }
 
-  @Get('equivalences')
+  @Get()
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   getEquivalences(@GetUserFamily() userFamily: Family) {
     return this.productEquivalencesService.getEquivalences({
@@ -59,7 +59,7 @@ export class ProductEquivalencesController {
     });
   }
 
-  @Patch('equivalences/:eqId')
+  @Patch('id/:eqId')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   updateProductEquivalences(
     @Param('eqId') eqId: string,
@@ -75,7 +75,7 @@ export class ProductEquivalencesController {
     );
   }
 
-  @Delete('equivalences/:eqId')
+  @Delete('id/:eqId')
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
   deleteProductEquivalence(
     @Param('eqId') eqId: string,

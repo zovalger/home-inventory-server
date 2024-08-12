@@ -19,6 +19,7 @@ import {
   CreateProductDto,
   CreateProductEquivalenceDto,
   CreateProductTransactionDto,
+  QueryTransactionDto,
   UpdateProductDto,
   UpdateProductEquivalenceDto,
 } from './dto';
@@ -27,6 +28,17 @@ import { QueryProductDto } from './dto/query-product.dto';
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
+
+  @Get('transactions')
+  @Auth()
+  getTransactions(
+    @Query() queryTransactionDto: QueryTransactionDto,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productsService.getTransactions(queryTransactionDto, {
+      userFamily,
+    });
+  }
 
   @Post()
   @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
@@ -145,7 +157,7 @@ export class ProductsController {
   //                        transaction
   // ************************************************************
 
-  @Post(':productId/transaction')
+  @Post(':productId/transactions')
   @Auth()
   createTransaction(
     @Param('productId') productId: string,
@@ -162,4 +174,39 @@ export class ProductsController {
       },
     );
   }
+
+  // @Get(':productId/transactions')
+  // @Auth()
+  // getProductTransactions(
+  //   @Query() queryTransactionDto: QueryTransactionDto,
+  //   @Param('productId') productId: string,
+  //   @GetUserFamily() userFamily: Family,
+  // ) {
+  //   return this.productsService.getProductTransactions(productId, {
+  //     userFamily,
+  //   });
+  // }
+
+  // @Get(':productId/transactions/:transactionId')
+  // @Auth()
+  // getTransactionById(
+  //   @Param('productId') productId: string,
+  //   @Param('transactionId') transactionId: string,
+  //   @GetUserFamily() userFamily: Family,
+  // ) {
+  //   return this.productsService.getTransaction_By_Id(transactionId);
+  // }
+
+  // @Delete('transactions/:transactionId')
+  // @Auth()
+  // deleteTransaction(
+  //   @Param('transactionId') transactionId: string,
+  //   @GetUser() user: User,
+  //   @GetUserFamily() userFamily: Family,
+  // ) {
+  //   return this.productsService.deleteTransaction(transactionId, {
+  //     user,
+  //     userFamily,
+  //   });
+  // }
 }

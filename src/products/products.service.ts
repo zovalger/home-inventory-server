@@ -14,6 +14,7 @@ import {
   CreateProductDto,
   CreateProductEquivalenceDto,
   CreateProductTransactionDto,
+  QueryTransactionDto,
   UpdateProductDto,
   UpdateProductEquivalenceDto,
 } from './dto';
@@ -683,6 +684,66 @@ export class ProductsService {
 
     return transaction;
   }
+
+  async getTransactions(
+    queryTransactionDto: QueryTransactionDto,
+    { userFamily }: Pick<AllUserData, 'userFamily'>,
+  ) {
+    const {
+      limit = 10,
+      offset = 0,
+      // name = '',
+      // brand = '',
+      // model = '',
+      // status = ProductStatus.active,
+      // lowStock,
+    } = queryTransactionDto;
+
+    const transactions = await this.productTransactionRepository
+      .createQueryBuilder('tr')
+      .innerJoinAndSelect('tr.product', 'product')
+      .where('product.familyId=:familyId', { familyId: userFamily.id })
+      // .andWhere(
+      //   new Brackets((qb) => {
+      //     qb.where('UPPER(product.name) LIKE :name', {
+      //       name: `%${name.toUpperCase()}%`,
+      //     }).andWhere('product.status=:status', { status });
+
+      //     if (brand)
+      //       qb.andWhere('UPPER(product.brand) LIKE :brand', {
+      //         brand: `%${brand.toUpperCase()}%`,
+      //       });
+
+      //     if (model)
+      //       qb.andWhere('UPPER(product.model) LIKE :model', {
+      //         model: `%${model.toUpperCase()}%`,
+      //       });
+
+      //     if (lowStock)
+      //       qb.andWhere('product."currentQuantity"<=product."minQuantity"');
+      //   }),
+      // )
+      // .orderBy('"createAt"', 'ASC')
+      .take(limit)
+      .skip(offset)
+      .getMany();
+
+    console.log(transactions);
+
+    return transactions;
+
+    // await this.getProduct(productId, { userFamily });
+    // const transaction = this.productTransactionRepository.find({
+    //   where: { productId: productId },
+    //   order: { createAt: 'ASC' },
+    // });
+    // return transaction;
+  }
+
+  // async deleteTransaction(
+  //   transactionId: string,
+  //   { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
+  // ) {}
 
   handleDBError(error: any) {
     if (error.code == '23505')

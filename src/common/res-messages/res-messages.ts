@@ -47,4 +47,11 @@ export enum ResMessages {
 
   productsHasManyLevelsEquivalences = 'the products have more levels of equivalences than allowed',
   productsHasCircularEquivalences = "the products have and circular equivalences, isn't allowed",
+
+  // ************************** transaccione **************************
+
+  transactionFailed = 'transaction failed',
+  TransactionNotFound = 'Transaction not found',
+  NotHaveStock = "You don't have enough stock",
+  transactionNotHaveStock = 'The selected transaction does not have enough stock',
 }

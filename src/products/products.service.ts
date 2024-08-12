@@ -502,17 +502,18 @@ export class ProductsService {
       if (type == ProductTransactionType.add)
         transaction = await this.createTransaction_add_by_queryRunner(params);
 
-      // if (type == ProductTransactionType.subtract)
-      //   transaction =
-      //     await this.createTransaction_sustract_by_queryRunner(params);
+      if (type == ProductTransactionType.subtract)
+        transaction =
+          await this.createTransaction_sustract_by_queryRunner(params);
 
-      // if (type == ProductTransactionType.restock)
-      //   transaction =
-      //     await this.createTransaction_restock_by_queryRunner(params);
+      if (type == ProductTransactionType.unpacking)
+        transaction =
+          await this.createTransaction_unpacking_by_queryRunner(params);
 
-      //
+      if (!transaction)
+        throw new BadRequestException(ResMessages.transactionFailed);
+
       await queryRunner.commitTransaction();
-
       await queryRunner.release();
 
       return transaction as ProductTransaction;
@@ -557,53 +558,128 @@ export class ProductsService {
   }
   // sustract
 
-  // async createTransaction_sustract_by_queryRunner(
-  //   transactionFuctionParams: TransactionFuctionParams,
-  // ): Promise<ProductTransaction> {
-  //   const { createById, productId, createProductTransactionDto, queryRunner } =
-  //     transactionFuctionParams;
-  //   // return await this.createTransaction_by_queryRunner(
-  //   //   {
-  //   //     type: ProductTransactionType.add,
-  //   //     quantity: quantity,
-  //   //     remainder: quantity,
-  //   //     productId,
-  //   //     createById,
-  //   //     expirationDate: null,
-  //   //     transactionRefId: null,
-  //   //   },
-  //   //   queryRunner,
-  //   // );
-  // }
+  async createTransaction_sustract_by_queryRunner(
+    transactionFuctionParams: TransactionFuctionParams,
+  ): Promise<ProductTransaction> {
+    const { createById, product, createProductTransactionDto, queryRunner } =
+      transactionFuctionParams;
 
-  // async createTransaction_restock_by_queryRunner(
-  //   transactionFuctionParams: TransactionFuctionParams,
-  // ): Promise<ProductTransaction> {
-  //   const { createById, productId, createProductTransactionDto, queryRunner } =
-  //     transactionFuctionParams;
-  //   // return await this.createTransaction_by_queryRunner(
-  //   //   {
-  //   //     type: ProductTransactionType.add,
-  //   //     quantity: quantity,
-  //   //     remainder: quantity,
-  //   //     productId,
-  //   //     createById,
-  //   //     expirationDate: null,
-  //   //     transactionRefId: null,
-  //   //   },
-  //   //   queryRunner,
-  //   // );
-  // }
+    const { currentQuantity } = product;
+    const { quantity, transactionRefId } = createProductTransactionDto;
 
-  async createTransaction_by_queryRunner(
-    createProductTransactionDto: CreateProductTransactionDto,
-    queryRunner: QueryRunner,
-  ) {
-    const transaction = this.productTransactionRepository.create(
-      createProductTransactionDto,
+    const data = {
+      ...createProductTransactionDto,
+      productId: product.id,
+      createById,
+      type: ProductTransactionType.subtract,
+    };
+
+    const transactionRef = await this.getTransaction_By_Id(transactionRefId);
+
+    if (currentQuantity < quantity)
+      throw new BadRequestException(ResMessages.NotHaveStock);
+
+    if (transactionRef.remainder < quantity)
+      throw new BadRequestException(ResMessages.transactionNotHaveStock);
+
+    transactionRef.remainder -= quantity;
+    product.currentQuantity -= quantity;
+
+    const newTransactionSubtract =
+      this.productTransactionRepository.create(data);
+
+    await queryRunner.manager.save([
+      transactionRef,
+      newTransactionSubtract,
+      product,
+    ]);
+
+    await this.calculateRelativeQuantity_by_queryRunner(
+      product.id,
+      queryRunner,
     );
 
-    await queryRunner.manager.save(transaction);
+    return newTransactionSubtract;
+  }
+
+  async createTransaction_unpacking_by_queryRunner(
+    transactionFuctionParams: TransactionFuctionParams,
+  ): Promise<ProductTransaction> {
+    const { createById, product, createProductTransactionDto, queryRunner } =
+      transactionFuctionParams;
+    const { currentQuantity } = product;
+    const { quantity, transactionRefId } = createProductTransactionDto;
+
+    const dataUnpacking = {
+      ...createProductTransactionDto,
+      productId: product.id,
+      createById,
+      type: ProductTransactionType.unpacking,
+    };
+
+    const chiltProduct = await this.productRepository.findOneBy({
+      productEq_To: { fromId: product.id },
+    });
+
+    if (!chiltProduct)
+      throw new NotFoundException(ResMessages.productsNotFound);
+
+    const {
+      productEq_To: { equal },
+    } = chiltProduct;
+
+    const transactionRef = await this.getTransaction_By_Id(transactionRefId);
+
+    if (currentQuantity < quantity)
+      throw new BadRequestException(ResMessages.NotHaveStock);
+
+    if (transactionRef.remainder < quantity)
+      throw new BadRequestException(ResMessages.transactionNotHaveStock);
+
+    transactionRef.remainder -= quantity;
+    product.currentQuantity -= quantity;
+
+    const chilQuantity = quantity * equal;
+    chiltProduct.currentQuantity += chilQuantity;
+
+    const newTransactionUnpacking =
+      this.productTransactionRepository.create(dataUnpacking);
+
+    await queryRunner.manager.save([
+      transactionRef,
+      product,
+      chiltProduct,
+      newTransactionUnpacking,
+    ]);
+
+    const dataRestock = {
+      quantity: chilQuantity,
+      transactionRefId: newTransactionUnpacking.id,
+      productId: chiltProduct.id,
+      createById,
+      type: ProductTransactionType.restock,
+    };
+
+    const newTransactionRestock =
+      this.productTransactionRepository.create(dataRestock);
+
+    await queryRunner.manager.save(newTransactionRestock);
+
+    await this.calculateRelativeQuantity_by_queryRunner(
+      product.id,
+      queryRunner,
+    );
+
+    return newTransactionUnpacking;
+  }
+
+  async getTransaction_By_Id(transactionId: string) {
+    const transaction = this.productTransactionRepository.findOneBy({
+      id: transactionId,
+    });
+
+    if (!transaction)
+      throw new NotFoundException(ResMessages.TransactionNotFound);
 
     return transaction;
   }

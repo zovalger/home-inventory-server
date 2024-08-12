@@ -13,7 +13,11 @@ import { Transform } from 'class-transformer';
 
 export class CreateProductTransactionDto {
   @IsString()
-  @IsIn(Object.values(ProductTransactionType))
+  @IsIn(
+    Object.values(ProductTransactionType).filter(
+      (t) => t != ProductTransactionType.restock,
+    ),
+  )
   type: ProductTransactionType; // add, subtract, unpacking
 
   @IsNumber()
@@ -26,18 +30,14 @@ export class CreateProductTransactionDto {
   // remainder: number;
 
   @IsOptional()
+  @ValidateIf(({ type }) => type == ProductTransactionType.add)
   @Transform(({ value, obj: { type } }) =>
     type == ProductTransactionType.add ? value : null,
   )
-  @ValidateIf(({ type }) => type == ProductTransactionType.add)
   @IsDateString()
   expirationDate: string;
 
-  @ValidateIf(
-    ({ type }) =>
-      type == ProductTransactionType.subtract ||
-      type == ProductTransactionType.restock,
-  )
+  @ValidateIf(({ type }) => type != ProductTransactionType.add)
   @Transform(({ value, obj: { type } }) =>
     type != ProductTransactionType.add ? value : null,
   )

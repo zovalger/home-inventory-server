@@ -65,4 +65,7 @@ export class ResMessages {
   NotHaveStock = "You don't have enough stock";
   transactionNotHaveStock =
     'The selected transaction does not have enough stock';
+  transactionRefInvalid = 'The selected transaction does not valid type';
+
+  transactionHaveReferences = 'Transaction Have References';
 }

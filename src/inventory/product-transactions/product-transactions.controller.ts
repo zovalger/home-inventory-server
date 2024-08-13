@@ -1,12 +1,21 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 
-import { Family } from '../../family/entities';
+import { Family, FamilyMember } from '../../family/entities';
 import { User } from '../../auth/entities';
 
 import { Auth, GetUser, GetUserFamily } from '../../auth/decorators';
 import { CreateProductTransactionDto, QueryTransactionDto } from '../dto';
 
 import { ProductTransactionsService } from './product-transactions.service';
+import { GetUserFamilyMember } from 'src/family/decorators';
 
 @Controller('inventory/transactions')
 export class ProductTransactionsController {
@@ -45,17 +54,6 @@ export class ProductTransactionsController {
       },
     );
   }
-  // @Get(':productId/transactions')
-  // @Auth()
-  // getProductTransactions(
-  //   @Query() queryTransactionDto: QueryTransactionDto,
-  //   @Param('productId') productId: string,
-  //   @GetUserFamily() userFamily: Family,
-  // ) {
-  //   return this.productsService.getProductTransactions(productId, {
-  //     userFamily,
-  //   });
-  // }
 
   // @Get(':productId/transactions/:transactionId')
   // @Auth()
@@ -67,16 +65,18 @@ export class ProductTransactionsController {
   //   return this.productsService.getTransaction_By_Id(transactionId);
   // }
 
-  // @Delete('transactions/:transactionId')
-  // @Auth()
-  // deleteTransaction(
-  //   @Param('transactionId') transactionId: string,
-  //   @GetUser() user: User,
-  //   @GetUserFamily() userFamily: Family,
-  // ) {
-  //   return this.productsService.deleteTransaction(transactionId, {
-  //     user,
-  //     userFamily,
-  //   });
-  // }
+  @Delete('id/:transactionId')
+  @Auth()
+  deleteTransaction(
+    @Param('transactionId') transactionId: string,
+    @GetUser() user: User,
+    @GetUserFamily() userFamily: Family,
+    @GetUserFamilyMember() userFamilyMember: FamilyMember,
+  ) {
+    return this.productTransactionsService.deleteTransaction(transactionId, {
+      user,
+      userFamily,
+      userFamilyMember,
+    });
+  }
 }

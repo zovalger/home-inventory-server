@@ -12,6 +12,7 @@ import { ProductTransaction } from '../entities';
 import { CreateProductTransactionDto, QueryTransactionDto } from '../dto';
 import { AllUserData } from '../../common/interfaces';
 import {
+  DeleteTransactionFuctionParams,
   ProductTransactionType,
   TransactionFuctionParams,
 } from '../interfaces';
@@ -19,6 +20,7 @@ import {
 import { ErrorHandleProvider, ResMessages } from '../../common/providers';
 import { ProductEquivalencesService } from '../product-equivalences/product-equivalences.service';
 import { ProductsService } from '../products/products.service';
+import { FamilyRoles } from 'src/family/interfaces';
 
 @Injectable()
 export class ProductTransactionsService {
@@ -148,6 +150,12 @@ export class ProductTransactionsService {
     if (transactionRef.remainder < quantity)
       throw new BadRequestException(this.resMessages.transactionNotHaveStock);
 
+    if (
+      transactionRef.type != ProductTransactionType.add &&
+      transactionRef.type != ProductTransactionType.restock
+    )
+      throw new BadRequestException(this.resMessages.transactionRefInvalid);
+
     transactionRef.remainder -= quantity;
     product.currentQuantity -= quantity;
 
@@ -191,6 +199,12 @@ export class ProductTransactionsService {
 
     const transactionRef = await this.getTransaction_By_Id(transactionRefId);
 
+    if (
+      transactionRef.type != ProductTransactionType.add &&
+      transactionRef.type != ProductTransactionType.restock
+    )
+      throw new BadRequestException(this.resMessages.transactionRefInvalid);
+
     if (currentQuantity < quantity)
       throw new BadRequestException(this.resMessages.NotHaveStock);
 
@@ -215,6 +229,7 @@ export class ProductTransactionsService {
 
     const dataRestock = {
       quantity: chilQuantity,
+      remainder: chilQuantity,
       transactionRefId: newTransactionUnpacking.id,
       productId: chiltProduct.id,
       createById,
@@ -234,9 +249,13 @@ export class ProductTransactionsService {
     return newTransactionUnpacking;
   }
 
-  async getTransaction_By_Id(transactionId: string) {
-    const transaction = this.productTransactionRepository.findOneBy({
-      id: transactionId,
+  async getTransaction_By_Id(
+    transactionId: string,
+    relations?: { product?: boolean; transactionRef?: boolean },
+  ) {
+    const transaction = this.productTransactionRepository.findOne({
+      where: { id: transactionId },
+      relations,
     });
 
     if (!transaction)
@@ -249,7 +268,7 @@ export class ProductTransactionsService {
     queryTransactionDto: QueryTransactionDto,
     { userFamily }: Pick<AllUserData, 'userFamily'>,
   ) {
-    const { limit = 10, offset = 0, type } = queryTransactionDto;
+    const { limit = 10, offset = 0, type, productId } = queryTransactionDto;
 
     const transactions = await this.productTransactionRepository
       .createQueryBuilder('tr')
@@ -263,9 +282,13 @@ export class ProductTransactionsService {
             qb.andWhere('tr.type=:type', {
               type,
             });
+
+          if (productId)
+            qb.andWhere('tr."productId"=:productId', {
+              productId,
+            });
         }),
       )
-
       .addOrderBy('tr.createAt', 'DESC')
       .take(limit)
       .skip(offset)
@@ -281,8 +304,157 @@ export class ProductTransactionsService {
     // return transaction;
   }
 
-  // async deleteTransaction(
-  //   transactionId: string,
-  //   { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
-  // ) {}
+  async deleteTransaction(
+    transactionId: string,
+    {
+      user,
+      userFamily,
+      userFamilyMember,
+    }: Pick<AllUserData, 'user' | 'userFamily' | 'userFamilyMember'>,
+  ) {
+    const transaction = await this.getTransaction_By_Id(transactionId, {
+      product: true,
+    });
+
+    const { product } = transaction;
+
+    if (product.familyId != userFamily.id)
+      throw new ForbiddenException(this.resMessages.UserForbiddenToFamily);
+
+    // si es el mismo usuario
+    // si es admin o ouwner
+    if (
+      user.id != transaction.createById &&
+      userFamilyMember.role != FamilyRoles.ouwner
+    )
+      throw new ForbiddenException(this.resMessages.UserForbidden);
+
+    // si no esta referenciada en otra transaccion
+
+    const otherTransaction = await this.productTransactionRepository.findOne({
+      where: { transactionRefId: transaction.id },
+    });
+
+    //
+    if (
+      otherTransaction &&
+      otherTransaction.type != ProductTransactionType.restock
+    )
+      throw new ForbiddenException(this.resMessages.transactionHaveReferences);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const params: DeleteTransactionFuctionParams = {
+        transaction,
+        product,
+        queryRunner,
+      };
+
+      // realizar operacion segun el tipo de transaccion
+      if (transaction.type == ProductTransactionType.add)
+        await this.delete_add_by_queryRunner(params);
+
+      if (transaction.type == ProductTransactionType.subtract)
+        await this.delete_subtract_by_queryRunner(params);
+
+      if (transaction.type == ProductTransactionType.unpacking) {
+        const restockOtherTransaction =
+          await this.productTransactionRepository.findOne({
+            where: { transactionRefId: otherTransaction.id },
+          });
+
+        if (restockOtherTransaction)
+          throw new ForbiddenException(
+            this.resMessages.transactionHaveReferences,
+          );
+
+        await this.delete_unpacking_by_queryRunner(params, otherTransaction);
+      }
+
+      // if (!transaction)
+      //   throw new BadRequestException(this.resMessages.transactionFailed);
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      // return transaction as ProductTransaction;
+    } catch (error) {
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      this.errorHandleProvider.handle(error);
+    }
+  }
+
+  async delete_add_by_queryRunner(
+    deleteTransactionFuctionParams: DeleteTransactionFuctionParams,
+  ) {
+    const { transaction, product, queryRunner } =
+      deleteTransactionFuctionParams;
+
+    product.currentQuantity -= transaction.quantity;
+
+    await queryRunner.manager.save(product);
+
+    await queryRunner.manager.delete(ProductTransaction, {
+      id: transaction.id,
+    });
+  }
+
+  async delete_subtract_by_queryRunner(
+    deleteTransactionFuctionParams: DeleteTransactionFuctionParams,
+  ) {
+    const { transaction, product, queryRunner } =
+      deleteTransactionFuctionParams;
+
+    product.currentQuantity += transaction.quantity;
+
+    await queryRunner.manager.update(
+      ProductTransaction,
+      { id: transaction.transactionRefId },
+      { remainder: () => `remainder + ${transaction.quantity}` },
+    );
+
+    await queryRunner.manager.save(product);
+
+    await queryRunner.manager.delete(ProductTransaction, {
+      id: transaction.id,
+    });
+  }
+
+  async delete_unpacking_by_queryRunner(
+    deleteTransactionFuctionParams: DeleteTransactionFuctionParams,
+    restockTransaction: ProductTransaction,
+  ) {
+    const { transaction, product, queryRunner } =
+      deleteTransactionFuctionParams;
+
+    if (restockTransaction)
+      throw new NotFoundException(this.resMessages.TransactionNotFound);
+
+    const restockProduct = await this.productsService.findById(
+      restockTransaction.productId,
+    );
+
+    product.currentQuantity += transaction.quantity;
+    restockProduct.currentQuantity -= restockTransaction.quantity;
+
+    await queryRunner.manager.update(
+      ProductTransaction,
+      { id: transaction.transactionRefId },
+      { remainder: () => `remainder + ${transaction.quantity}` },
+    );
+
+    await queryRunner.manager.save([product, restockProduct]);
+
+    await queryRunner.manager.delete(ProductTransaction, {
+      id: restockTransaction.id,
+    });
+    await queryRunner.manager.delete(ProductTransaction, {
+      id: transaction.id,
+    });
+  }
 }

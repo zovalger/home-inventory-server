@@ -268,7 +268,7 @@ export class ProductEquivalencesService {
       relations: { from: true, to: { productEq_From: { to: true } } },
     });
 
-    if (!eq) throw new NotFoundException('no equivalencia');
+    if (!eq) return;
 
     const parent = await queryRunner.manager.findOne(ProductEquivalence, {
       where: [{ toId: productId }],

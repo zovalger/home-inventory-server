@@ -32,6 +32,11 @@ import { ProductTransactionsController } from './product-transactions/product-tr
     ProductEquivalencesService,
     ProductTransactionsService,
   ],
-  exports: [ProductsService, TypeOrmModule],
+  exports: [
+    TypeOrmModule,
+    ProductsService,
+    ProductEquivalencesService,
+    ProductTransactionsService,
+  ],
 })
 export class InventoryModule {}

@@ -68,6 +68,16 @@ export class ProductsController {
     @GetUser() user: User,
     @GetUserFamily() userFamily: Family,
   ) {
-    return this.productsService.moveToTrash(productId, { userFamily });
+    return this.productsService.moveToArchive(productId, { userFamily });
+  }
+
+  @Post(':productId/unarchived')
+  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  unarchived(
+    @Param('productId') productId: string,
+    @GetUser() user: User,
+    @GetUserFamily() userFamily: Family,
+  ) {
+    return this.productsService.unarchived(productId, { userFamily });
   }
 }

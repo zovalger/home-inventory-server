@@ -158,7 +158,7 @@ export class ProductsService {
   }
 
   async update(
-    id: string,
+    productId: string,
     updateProductDto: UpdateProductDto,
     { userFamily }: Pick<AllUserData, 'userFamily'>,
   ) {
@@ -170,11 +170,11 @@ export class ProductsService {
       model,
     });
 
-    if (otherProduct)
+    if (otherProduct && otherProduct.id != productId)
       throw new BadRequestException(this.resMessages.productAlreadyExist);
 
     const product = await this.productRepository.preload({
-      id,
+      id: productId,
       ...updateProductDto,
     });
 
@@ -191,20 +191,60 @@ export class ProductsService {
     }
   }
 
-  async moveToTrash(
+  async moveToArchive(
     id: string,
     { userFamily }: Pick<AllUserData, 'userFamily'>,
   ) {
-    const product = await this.productRepository.findOneBy({ id });
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: { productEq_From: { to: true }, productEq_To: { from: true } },
+      select: {
+        id: true,
+        familyId: true,
+        name: true,
+        productEq_From: { to: { id: true, name: true } },
+        productEq_To: { from: { id: true, name: true } },
+      },
+    });
+
+    if (!product)
+      throw new NotFoundException(this.resMessages.productsNotFound);
 
     if (product.familyId != userFamily.id)
       throw new BadRequestException(this.resMessages.UserUnauthorizedToFamily);
 
-    await this.productRepository.update(
-      { id },
-      { status: ProductStatus.delete },
-    );
+    if (product.productEq_To || product.productEq_From) {
+      throw new BadRequestException(
+        this.resMessages.productHasRelations([
+          product.productEq_From?.to.name,
+          product.productEq_To?.from.name,
+        ]),
+      );
+    }
 
-    return;
+    product.status = ProductStatus.archived;
+
+    await this.productRepository.save(product);
+
+    return { success: true, message: `product ${product.name} archived` };
+  }
+
+  async unarchived(
+    id: string,
+    { userFamily }: Pick<AllUserData, 'userFamily'>,
+  ) {
+    const product = await this.findById(id);
+
+    if (!product)
+      throw new NotFoundException(this.resMessages.productsNotFound);
+
+    if (product.familyId != userFamily.id)
+      throw new BadRequestException(this.resMessages.UserUnauthorizedToFamily);
+
+    product.status = ProductStatus.active;
+
+    await this.productRepository.save(product);
+
+    return product;
   }
 }

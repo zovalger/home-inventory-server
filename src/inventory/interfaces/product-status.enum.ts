@@ -1,4 +1,5 @@
 export enum ProductStatus {
   active = 'a',
-  delete = 'd',
+  archived = 'd',
+  // delete = 'd',
 }

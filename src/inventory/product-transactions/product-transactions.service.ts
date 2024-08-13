@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { ProductTransaction } from '../entities';
@@ -249,46 +249,27 @@ export class ProductTransactionsService {
     queryTransactionDto: QueryTransactionDto,
     { userFamily }: Pick<AllUserData, 'userFamily'>,
   ) {
-    const {
-      limit = 10,
-      offset = 0,
-      // name = '',
-      // brand = '',
-      // model = '',
-      // status = ProductStatus.active,
-      // lowStock,
-    } = queryTransactionDto;
+    const { limit = 10, offset = 0, type } = queryTransactionDto;
 
     const transactions = await this.productTransactionRepository
       .createQueryBuilder('tr')
       .innerJoinAndSelect('tr.product', 'product')
-      .where('product.familyId=:familyId', { familyId: userFamily.id })
-      // .andWhere(
-      //   new Brackets((qb) => {
-      //     qb.where('UPPER(product.name) LIKE :name', {
-      //       name: `%${name.toUpperCase()}%`,
-      //     }).andWhere('product.status=:status', { status });
+      .where('product.familyId=:familyId', {
+        familyId: userFamily.id,
+      })
+      .andWhere(
+        new Brackets((qb) => {
+          if (type)
+            qb.andWhere('tr.type=:type', {
+              type,
+            });
+        }),
+      )
 
-      //     if (brand)
-      //       qb.andWhere('UPPER(product.brand) LIKE :brand', {
-      //         brand: `%${brand.toUpperCase()}%`,
-      //       });
-
-      //     if (model)
-      //       qb.andWhere('UPPER(product.model) LIKE :model', {
-      //         model: `%${model.toUpperCase()}%`,
-      //       });
-
-      //     if (lowStock)
-      //       qb.andWhere('product."currentQuantity"<=product."minQuantity"');
-      //   }),
-      // )
-      // .orderBy('"createAt"', 'ASC')
+      .addOrderBy('tr.createAt', 'DESC')
       .take(limit)
       .skip(offset)
       .getMany();
-
-    console.log(transactions);
 
     return transactions;
 

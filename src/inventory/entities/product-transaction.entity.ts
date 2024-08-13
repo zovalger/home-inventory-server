@@ -55,10 +55,8 @@ export class ProductTransaction {
   // ****************** automaticas ******************
 
   @CreateDateColumn()
-  @Column('timestamp', { nullable: false })
   createAt: string;
 
   @UpdateDateColumn()
-  @Column('timestamp', { nullable: false })
   updateAt: string;
 }

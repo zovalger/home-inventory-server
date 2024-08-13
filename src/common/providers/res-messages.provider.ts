@@ -54,6 +54,10 @@ export class ResMessages {
   productsHasCircularEquivalences =
     "the products have and circular equivalences isn't allowed";
 
+  productHasRelations(productNames: string[]) {
+    return `This product have relations with "${productNames}"`;
+  }
+
   // ************************** transaccione **************************
 
   transactionFailed = 'transaction failed';

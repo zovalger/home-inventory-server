@@ -21,7 +21,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 import { ErrorHandleProvider, ResMessages } from '../common/providers';
 import { EmailService } from '../email/email.service';
-import { FilesService } from 'src/files/files.service';
+import { FilesService } from '../files/files.service';
 
 @Injectable()
 export class AuthService {

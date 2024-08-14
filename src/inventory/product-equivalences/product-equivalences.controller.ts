@@ -10,13 +10,14 @@ import {
 
 import { Family } from '../../family/entities';
 
-import { Auth, GetUserFamily } from '../../auth/decorators';
+import { Auth } from '../../auth/decorators';
 import { FamilyRoles } from '../../family/interfaces';
 import {
   CreateProductEquivalenceDto,
   UpdateProductEquivalenceDto,
 } from '../dto';
 import { ProductEquivalencesService } from './product-equivalences.service';
+import { GetUserFamily } from '../../family/decorators';
 
 @Controller('inventory/equivalences')
 export class ProductEquivalencesController {

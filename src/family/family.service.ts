@@ -18,7 +18,7 @@ import {
   UpdateRoleMemberDto,
 } from './dto';
 
-import { ErrorHandleProvider, ResMessages } from 'src/common/providers';
+import { ErrorHandleProvider, ResMessages } from '../common/providers';
 import { FilesService } from '../files/files.service';
 import { EmailService } from '../email/email.service';
 import { AllUserData } from '../common/interfaces';

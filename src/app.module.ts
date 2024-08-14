@@ -19,17 +19,28 @@ import { InventoryModule } from './inventory/inventory.module';
       validationSchema: JoiValidationsSchema,
     }),
 
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: +process.env.DB_PORT,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
+    TypeOrmModule.forRoot(
+      process.env.NODE_ENV == 'production'
+        ? {
+            type: 'postgres',
+            host: process.env.DB_HOST,
+            port: +process.env.DB_PORT,
+            username: process.env.DB_USERNAME,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+          }
+        : {
+            type: 'postgres',
+            host: process.env.TEST_DB_HOST,
+            port: +process.env.TEST_DB_PORT,
+            username: process.env.TEST_DB_USERNAME,
+            password: process.env.TEST_DB_PASSWORD,
+            database: process.env.TEST_DB_NAME,
 
-      autoLoadEntities: true,
-      synchronize: true,
-    }),
+            autoLoadEntities: true,
+            synchronize: true,
+          },
+    ),
 
     EmailModule,
 

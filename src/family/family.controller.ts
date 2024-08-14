@@ -12,8 +12,8 @@ import {
 import { User } from '../auth/entities';
 import { Family, FamilyMember } from './entities';
 
-import { Auth, GetUser, GetUserFamily } from '../auth/decorators';
-import { GetUserFamilyMember } from './decorators';
+import { Auth, GetUser } from '../auth/decorators';
+import { GetUserFamily, GetUserFamilyMember } from './decorators';
 
 import { FamilyRoles } from './interfaces';
 import {

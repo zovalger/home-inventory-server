@@ -1,5 +1,4 @@
-import { UserVerificationCode } from 'src/auth/entities';
-import { User } from 'src/auth/entities/user.entity';
+import { User, UserVerificationCode } from '../../auth/entities';
 
 export class CreateUserEmailDto {
   user: User;

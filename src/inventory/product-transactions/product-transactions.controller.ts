@@ -11,11 +11,11 @@ import {
 import { Family, FamilyMember } from '../../family/entities';
 import { User } from '../../auth/entities';
 
-import { Auth, GetUser, GetUserFamily } from '../../auth/decorators';
+import { Auth, GetUser } from '../../auth/decorators';
 import { CreateProductTransactionDto, QueryTransactionDto } from '../dto';
 
 import { ProductTransactionsService } from './product-transactions.service';
-import { GetUserFamilyMember } from 'src/family/decorators';
+import { GetUserFamily, GetUserFamilyMember } from '../../family/decorators';
 
 @Controller('inventory/transactions')
 export class ProductTransactionsController {

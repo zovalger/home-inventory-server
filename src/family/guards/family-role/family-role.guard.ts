@@ -13,7 +13,7 @@ import { Observable } from 'rxjs';
 
 import { User } from '../../../auth/entities';
 
-import { META_FAMILY_ROLES } from 'src/family/decorators/family-role-protected.decorator';
+import { META_FAMILY_ROLES } from '../../decorators/family-role-protected.decorator';
 import { FamilyMember } from '../../../family/entities';
 import { FamilyRoles } from '../../../family/interfaces';
 import { META_MEMBER_FAMILY } from '../../../family/decorators/member-family.decorator';

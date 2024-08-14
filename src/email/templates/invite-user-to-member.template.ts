@@ -1,4 +1,4 @@
-import { FamilyInvitationDto } from 'src/family/dto/create-family-invitations.dto';
+import { FamilyInvitationDto } from '../../family/dto/create-family-invitations.dto';
 
 export const InviteUserToMemberTemplate = (
   userName: string,

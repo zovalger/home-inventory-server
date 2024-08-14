@@ -20,7 +20,7 @@ import {
 import { ErrorHandleProvider, ResMessages } from '../../common/providers';
 import { ProductEquivalencesService } from '../product-equivalences/product-equivalences.service';
 import { ProductsService } from '../products/products.service';
-import { FamilyRoles } from 'src/family/interfaces';
+import { FamilyRoles } from '../../family/interfaces';
 
 @Injectable()
 export class ProductTransactionsService {

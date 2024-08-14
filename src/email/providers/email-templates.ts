@@ -6,7 +6,7 @@ import {
   CreateUserEmailTemplate,
   InviteUserToMemberTemplate,
 } from '../templates';
-import { FamilyInvitationDto } from 'src/family/dto/create-family-invitations.dto';
+import { FamilyInvitationDto } from '../../family/dto';
 
 interface EmailTemplate {
   subject: string;

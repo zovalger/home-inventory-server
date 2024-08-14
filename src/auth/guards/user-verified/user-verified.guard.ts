@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { META_WITHOUTVERIFIED } from 'src/auth/decorators/verified-user.decorator';
-import { User } from 'src/auth/entities';
+import { META_WITHOUTVERIFIED } from '../../decorators/verified-user.decorator';
+import { User } from '../../entities';
 
 @Injectable()
 export class UserVerifiedGuard implements CanActivate {

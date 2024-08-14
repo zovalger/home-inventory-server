@@ -6,9 +6,10 @@ import { UserRoleGuard } from '../guards/user-role/user-role.guard';
 import { ValidRoles } from '../interface/valid-roles';
 import { UserVerifiedGuard } from '../guards/user-verified/user-verified.guard';
 import { VerifiedUser } from './verified-user.decorator';
-import { FamilyRoleGuard } from 'src/family/guards/family-role/family-role.guard';
-import { FamilyRoles } from 'src/family/interfaces';
-import { FamilyRoleProtected, MemberFamily } from 'src/family/decorators';
+
+import { FamilyRoles } from '../../family/interfaces';
+import { FamilyRoleProtected, MemberFamily } from '../../family/decorators';
+import { FamilyRoleGuard } from '../../family/guards/family-role/family-role.guard';
 
 interface Params {
   roles?: ValidRoles[];

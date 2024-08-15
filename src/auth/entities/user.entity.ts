@@ -30,7 +30,7 @@ export class User {
   @Column('text', { nullable: false, select: false })
   password: string;
 
-  @Column('date', { nullable: true })
+  @Column('timestamp with time zone', { nullable: true })
   birthday: string;
 
   @Column('bool', { default: true, nullable: false })

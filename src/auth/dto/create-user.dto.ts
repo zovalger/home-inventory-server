@@ -1,11 +1,12 @@
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsString,
   MinLength,
   IsOptional,
   IsEmail,
   IsStrongPassword,
-  IsDateString,
+  // IsDateString,
+  IsDate,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -35,7 +36,8 @@ export class CreateUserDto {
   password: string;
 
   @IsOptional()
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   birthday?: string;
 
   //todo: aceptar country

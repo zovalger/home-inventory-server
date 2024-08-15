@@ -15,32 +15,22 @@ import { InventoryModule } from './inventory/inventory.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
+      envFilePath: ['.env.test.local'],
       load: [EnvConfiguration],
       validationSchema: JoiValidationsSchema,
     }),
 
-    TypeOrmModule.forRoot(
-      process.env.NODE_ENV == 'production'
-        ? {
-            type: 'postgres',
-            host: process.env.DB_HOST,
-            port: +process.env.DB_PORT,
-            username: process.env.DB_USERNAME,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME,
-          }
-        : {
-            type: 'postgres',
-            host: process.env.TEST_DB_HOST,
-            port: +process.env.TEST_DB_PORT,
-            username: process.env.TEST_DB_USERNAME,
-            password: process.env.TEST_DB_PASSWORD,
-            database: process.env.TEST_DB_NAME,
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST,
+      port: +process.env.DB_PORT,
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
 
-            autoLoadEntities: true,
-            synchronize: true,
-          },
-    ),
+      autoLoadEntities: process.env.NODE_ENV != 'production',
+      synchronize: process.env.NODE_ENV != 'production',
+    }),
 
     EmailModule,
 

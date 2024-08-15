@@ -148,10 +148,10 @@ export class AuthService {
       select: { id: true, email: true, password: true },
     });
 
-    if (!user) throw new NotFoundException('User or password incorrect');
+    if (!user) throw new BadRequestException('User or password incorrect');
 
     if (!bcrypt.compareSync(password, user.password))
-      throw new NotFoundException('User or password incorrect');
+      throw new BadRequestException('User or password incorrect');
 
     return { token: this.getJwtToken({ id: user.id }) };
   }

@@ -152,7 +152,7 @@ export class ProductsService {
     const product = await this.findById(id);
 
     if (product.familyId != userFamily.id)
-      throw new ForbiddenException(this.resMessages.UserForbiddenToFamily);
+      throw new ForbiddenException(this.resMessages.userForbiddenToFamily);
 
     return product;
   }
@@ -180,7 +180,7 @@ export class ProductsService {
 
     // ver si es de la misma familia
     if (product.familyId != userFamily.id)
-      throw new BadRequestException(this.resMessages.UserUnauthorizedToFamily);
+      throw new BadRequestException(this.resMessages.userUnauthorizedToFamily);
 
     try {
       await this.productRepository.save(product);
@@ -211,7 +211,7 @@ export class ProductsService {
       throw new NotFoundException(this.resMessages.productsNotFound);
 
     if (product.familyId != userFamily.id)
-      throw new BadRequestException(this.resMessages.UserUnauthorizedToFamily);
+      throw new BadRequestException(this.resMessages.userUnauthorizedToFamily);
 
     if (product.productEq_To || product.productEq_From) {
       throw new BadRequestException(
@@ -239,7 +239,7 @@ export class ProductsService {
       throw new NotFoundException(this.resMessages.productsNotFound);
 
     if (product.familyId != userFamily.id)
-      throw new BadRequestException(this.resMessages.UserUnauthorizedToFamily);
+      throw new BadRequestException(this.resMessages.userUnauthorizedToFamily);
 
     product.status = ProductStatus.active;
 

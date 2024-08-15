@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Patch,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 
 import { User } from './entities';
 
@@ -21,6 +29,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   login(@Body(FormatEmailPipe) loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto);
   }
@@ -31,19 +40,20 @@ export class AuthController {
     return this.authService.profile(user);
   }
 
-  @Post('resend_code')
-  @Auth({ withoutVerification: true, withoutFamilyMember: true })
-  resendVerificationCode(@GetUser() user: User) {
-    return this.authService.resendVerificationCode(user);
-  }
-
   @Post('verify')
   @Auth({ withoutVerification: true, withoutFamilyMember: true })
+  @HttpCode(HttpStatus.OK)
   verify(
     @GetUser() user: User,
     @Body() verificationCodeDto: VerificationCodeDto,
   ) {
     return this.authService.verify(user, verificationCodeDto);
+  }
+
+  @Post('resend_code')
+  @Auth({ withoutVerification: true, withoutFamilyMember: true })
+  resendVerificationCode(@GetUser() user: User) {
+    return this.authService.resendVerificationCode(user);
   }
 
   @Patch('edit')

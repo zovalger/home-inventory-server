@@ -14,6 +14,7 @@ import { FamilyModule } from '../family/family.module';
 import { CommonModule } from '../common/common.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { VerificationCodeService } from './verification-code/verification-code.service';
 
 @Module({
   imports: [
@@ -41,7 +42,7 @@ import { AuthService } from './auth.service';
     EmailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [JwtStrategy, AuthService, VerificationCodeService],
   exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule],
 })
 export class AuthModule {}

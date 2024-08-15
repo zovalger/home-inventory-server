@@ -45,7 +45,7 @@ export class FamilyRoleGuard implements CanActivate {
     const user = req.user as User;
 
     if (!user)
-      throw new InternalServerErrorException(this.resMessages.UserNotFound);
+      throw new InternalServerErrorException(this.resMessages.userNotFound);
 
     return withoutFamilyMember || this.haveFamilyRole(req, user, familyRoles);
   }
@@ -75,7 +75,7 @@ export class FamilyRoleGuard implements CanActivate {
 
     if (!roles.includes(member.role))
       throw new UnauthorizedException(
-        this.resMessages.UserUnauthorizedToFamily,
+        this.resMessages.userUnauthorizedToFamily,
       );
 
     return true;

@@ -1,7 +1,5 @@
-import { User } from '../entities';
-
 export class CreateUserVerificationCodeDto {
-  user: User;
+  userId: string;
   code: string;
   expireIn: string;
 }

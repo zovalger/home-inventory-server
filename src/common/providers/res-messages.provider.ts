@@ -4,25 +4,40 @@ import { Injectable } from '@nestjs/common';
 export class ResMessages {
   // ************************** genericos **************************
 
-  NotFound = 'Not found';
+  notFound = 'Not found';
 
   // ************************** files **************************
-  ImageNotFound = "The image isn't registed in DB";
+  imageNotFound = "The image isn't registed in DB";
 
   // ************************** users **************************
-  UserNotFound = 'User not found';
 
-  UserForbidden = 'You not have authorization';
+  // errors
+  userIncorrectLogin = 'email or password incorrect';
+  userNotFound = 'User not found';
+  userForbidden = 'You not have authorization';
+  userAlreadyRegisted = 'user is already registed';
+  userAlreadyVerified = 'The user is already verified';
 
-  UserAlreadyVerified = 'The user is already verified';
+  // confirmations
+  userRegisterSuccess = 'User registered successfully';
+  userLoginSuccess = 'Login success';
+  userProfileObtained = 'Profile obtained';
+
+  // ******* codigos *******
+  // errors
+  userVerifyCodeNotFound = "Verification code isn't not exits";
+  userVerifyCodeExpired = 'Verification code is expired';
+
+  // confirmations
+  userVerifySuccess = 'user verify success';
 
   // ************************** family **************************
 
   familyNotFound = 'Family not found';
 
-  UserForbiddenToFamily = 'The user is forbidden for this family';
+  userForbiddenToFamily = 'The user is forbidden for this family';
 
-  UserUnauthorizedToFamily = "The user isn't authorized for this family";
+  userUnauthorizedToFamily = "The user isn't authorized for this family";
 
   // ************************** members **************************
 

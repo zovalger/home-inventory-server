@@ -17,11 +17,11 @@ export class UserVerificationCode {
   @Column('text', { nullable: false })
   code: string;
 
-  @Column('timestamp', { nullable: false })
+  @Column('timestamp with time zone', { nullable: false })
   expireIn: string;
 
-  @Column('bool', { default: false, nullable: false })
-  isUsed: boolean;
+  @Column('text', { nullable: false })
+  userId: string;
 
   @ManyToOne(() => User, (user) => user.id)
   user: User;

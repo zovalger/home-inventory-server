@@ -54,7 +54,7 @@ export class ProductTransactionsService {
     const product = await this.productsService.findById(productId);
 
     if (product.familyId != userFamily.id)
-      throw new ForbiddenException(this.resMessages.UserForbiddenToFamily);
+      throw new ForbiddenException(this.resMessages.userForbiddenToFamily);
 
     try {
       let transaction = null;
@@ -319,7 +319,7 @@ export class ProductTransactionsService {
     const { product } = transaction;
 
     if (product.familyId != userFamily.id)
-      throw new ForbiddenException(this.resMessages.UserForbiddenToFamily);
+      throw new ForbiddenException(this.resMessages.userForbiddenToFamily);
 
     // si es el mismo usuario
     // si es admin o ouwner
@@ -327,7 +327,7 @@ export class ProductTransactionsService {
       user.id != transaction.createById &&
       userFamilyMember.role != FamilyRoles.ouwner
     )
-      throw new ForbiddenException(this.resMessages.UserForbidden);
+      throw new ForbiddenException(this.resMessages.userForbidden);
 
     // si no esta referenciada en otra transaccion
 

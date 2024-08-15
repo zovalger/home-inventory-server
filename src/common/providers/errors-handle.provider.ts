@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 
 export class ErrorHandleProvider {
-  handle(error: any) {
+  handle(error: any, message?: string) {
     if (error.code == '23505')
-      throw new BadRequestException('Is already register');
+      throw new BadRequestException(message || 'Is already register');
 
     if (error.status == 404) throw new NotFoundException(error.response);
     if (error.status == 400) throw new BadRequestException(error.response);

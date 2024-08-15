@@ -52,7 +52,7 @@ export class ProductEquivalencesService {
       );
 
     if (from.familyId != userFamily.id)
-      throw new BadRequestException(this.resMessages.UserUnauthorizedToFamily);
+      throw new BadRequestException(this.resMessages.userUnauthorizedToFamily);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -119,12 +119,12 @@ export class ProductEquivalencesService {
       relations: { from: true },
     });
 
-    if (!eq) throw new NotFoundException(this.resMessages.NotFound);
+    if (!eq) throw new NotFoundException(this.resMessages.notFound);
 
     const { familyId: eqFamilyId } = eq.from;
 
     if (eqFamilyId != userFamily.id)
-      throw new BadRequestException(this.resMessages.UserUnauthorizedToFamily);
+      throw new BadRequestException(this.resMessages.userUnauthorizedToFamily);
 
     if (fromId) {
       const product = await this.productsService.findById(fromId);
@@ -175,14 +175,14 @@ export class ProductEquivalencesService {
       relations: { from: true, to: true },
     });
 
-    if (!eq) throw new NotFoundException(this.resMessages.NotFound);
+    if (!eq) throw new NotFoundException(this.resMessages.notFound);
 
     const { from, to } = eq;
 
     const { familyId } = from;
 
     if (familyId != userFamily.id)
-      throw new BadRequestException(this.resMessages.UserUnauthorizedToFamily);
+      throw new BadRequestException(this.resMessages.userUnauthorizedToFamily);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

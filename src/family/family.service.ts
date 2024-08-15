@@ -54,7 +54,7 @@ export class FamilyService {
     if (imageUrl) {
       const existImage = await this.filesService.existImageInDB(imageUrl);
       if (!existImage)
-        throw new BadRequestException(this.resMessages.ImageNotFound);
+        throw new BadRequestException(this.resMessages.imageNotFound);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -123,7 +123,7 @@ export class FamilyService {
     if (imageUrl) {
       const existImage = await this.filesService.existImageInDB(imageUrl);
       if (!existImage)
-        throw new BadRequestException(this.resMessages.ImageNotFound);
+        throw new BadRequestException(this.resMessages.imageNotFound);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -221,18 +221,18 @@ export class FamilyService {
     { user, userFamilyMember }: Omit<AllUserData, 'userFamily'>,
   ) {
     if (updateRoleMemberDto.role == FamilyRoles.ouwner)
-      throw new BadRequestException(this.resMessages.UserForbidden);
+      throw new BadRequestException(this.resMessages.userForbidden);
 
     const member = await this.getMember_by_id(memberId);
 
     // que el usuario no se cambie el rol a si mismo
     if (member.userId == user.id)
-      throw new ForbiddenException(this.resMessages.UserForbidden);
+      throw new ForbiddenException(this.resMessages.userForbidden);
 
     // ver si es de la misma familia
     // el usuario ouwner pertenece a esta familia?
     if (member.familyId != userFamilyMember.familyId)
-      throw new ForbiddenException(this.resMessages.UserForbiddenToFamily);
+      throw new ForbiddenException(this.resMessages.userForbiddenToFamily);
 
     try {
       member.role = updateRoleMemberDto.role;
@@ -256,7 +256,7 @@ export class FamilyService {
     // si no es el dueño solo puede eliminarse a si mismo
     if (role != FamilyRoles.ouwner) {
       if (user.id != member.userId)
-        throw new ForbiddenException(this.resMessages.UserForbidden);
+        throw new ForbiddenException(this.resMessages.userForbidden);
 
       const result = await this.familyMemberRepository.delete({ id: memberId });
       return { success: !!result.affected };
@@ -264,10 +264,10 @@ export class FamilyService {
 
     // es de la misma familia?
     if (familyId != member.familyId)
-      throw new ForbiddenException(this.resMessages.UserUnauthorizedToFamily);
+      throw new ForbiddenException(this.resMessages.userUnauthorizedToFamily);
 
     if (user.id == member.userId)
-      throw new ForbiddenException(this.resMessages.UserForbidden);
+      throw new ForbiddenException(this.resMessages.userForbidden);
 
     try {
       const result = await this.familyMemberRepository.delete({ id: memberId });
@@ -404,7 +404,7 @@ export class FamilyService {
     const { guestEmail, familyId, role } = invitation;
 
     if (guestEmail != user.email)
-      throw new ForbiddenException(this.resMessages.UserForbidden);
+      throw new ForbiddenException(this.resMessages.userForbidden);
 
     const isMember = await this.isMemberOfAnyFamily(user.id);
     if (isMember)
@@ -451,7 +451,7 @@ export class FamilyService {
       throw new BadRequestException(this.resMessages.invitationIsNotActive);
 
     if (email != invitation.guestEmail)
-      throw new ForbiddenException(this.resMessages.UserForbidden);
+      throw new ForbiddenException(this.resMessages.userForbidden);
 
     try {
       invitation.status = FamilyMemberInvitationStatus.rejected;
@@ -471,7 +471,7 @@ export class FamilyService {
       throw new BadRequestException(this.resMessages.invitationIsNotActive);
 
     if (invitation.familyId != family.id)
-      throw new ForbiddenException(this.resMessages.UserForbidden);
+      throw new ForbiddenException(this.resMessages.userForbidden);
 
     try {
       invitation.status = FamilyMemberInvitationStatus.canceled;

@@ -1,7 +1,7 @@
 import { Injectable, PipeTransform, BadRequestException } from '@nestjs/common';
 
 @Injectable()
-export class FormatEmailPipe implements PipeTransform {
+export class EmailFormatEmailPipe implements PipeTransform {
   transform(value: any) {
     const { email } = value;
 

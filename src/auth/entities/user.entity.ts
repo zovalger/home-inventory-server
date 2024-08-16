@@ -21,7 +21,7 @@ export class User {
   @Column('text', { nullable: false })
   name: string;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: false, default: '' })
   lastName: string;
 
   @Column('text', { nullable: false, unique: true })

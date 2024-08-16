@@ -1,28 +1,25 @@
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsString,
   MinLength,
   IsOptional,
   IsEmail,
   IsStrongPassword,
-  // IsDateString,
   IsDate,
 } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
-  @Transform(({ value }) => value.trim())
+  // @Transform(({ value }) => value.trim())
   @MinLength(1)
   name: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value.trim())
-  @MinLength(1)
   lastName?: string;
 
   @IsEmail()
-  @Transform(({ value }) => value.trim().toLocaleLowerCase())
+  // @Transform(({ value }) => value.trim().toLocaleLowerCase())
   email: string;
 
   @IsString()

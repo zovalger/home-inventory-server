@@ -1,3 +1,5 @@
+export { UpdateUserEmailDto } from './update-user-email.dto';
+export { UpdateUserDto } from './update-user.dto';
 export { CreateUserVerificationCodeDto } from './create-user-verification-code.dto';
 export { CreateUserDto } from './create-user.dto';
 export { LoginUserDto } from './login-user.dto';

@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -28,7 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const user = await this.userRepository.findOneBy({ id });
 
-    if (!user) throw new UnauthorizedException('Token not valid');
+    if (!user) throw new ForbiddenException('Token not valid');
 
     if (!user.isActive)
       throw new UnauthorizedException("The user isn't active");

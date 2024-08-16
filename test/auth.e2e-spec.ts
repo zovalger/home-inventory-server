@@ -17,6 +17,7 @@ describe('AuthModule (e2e)', () => {
   let userVerificationCodeRepository: Repository<UserVerificationCode>;
   let resMessage: ResMessages;
 
+  const badToken = '123456789';
   const user_test_1_Credentials = {
     email: 'user_test_1@gmail.com',
     password: 'Ab123456.',
@@ -108,6 +109,18 @@ describe('AuthModule (e2e)', () => {
         .send({ ...user_test_1_FullInfoToCreate, password: '123' });
 
       expect(res.status).toBe(400);
+    });
+
+    it('shold status 400 by null values ', async () => {
+      await request(server)
+        .post('/auth/register')
+        .send({
+          name: null,
+          lastName: null,
+          email: null,
+          password: null,
+        })
+        .expect(400);
     });
 
     it('should create user account successfull with the minimun info', async () => {
@@ -230,7 +243,14 @@ describe('AuthModule (e2e)', () => {
   });
 
   describe('get profile', () => {
-    it('should status 401 by token not provided', async () => {
+    it('should status 401 by bad token', async () => {
+      await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${badToken}`)
+        .expect(401);
+    });
+
+    it('should status 401 invalid token', async () => {
       await request(server).get('/auth/profile').expect(401);
     });
 
@@ -301,6 +321,8 @@ describe('AuthModule (e2e)', () => {
       expect(message).toBe(resMessage.userVerifySuccess);
 
       const user = await getUser(userRepository, user_test_1_Credentials.email);
+
+      user_test_1 = user;
       const verificationCodeUsed =
         await userVerificationCodeRepository.findOneBy({
           id: verificationCode.id,
@@ -339,7 +361,110 @@ describe('AuthModule (e2e)', () => {
       const { message } = res.body;
       expect(message).toBe(resMessage.userVerifyCodeExpired);
     });
+  });
 
-    // todo: reenviar el codigo
+  describe('Resend verification code', () => {
+    // no estoy logueado
+
+    it('should status 401 by bad token', async () => {
+      await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${badToken}`)
+        .expect(401);
+    });
+
+    it('should status 401 by token not provided', async () => {
+      await request(server).get('/auth/profile').expect(401);
+    });
+
+    it('success', async () => {
+      const res = await request(server)
+        .post('/auth/resend_code')
+        .set('Authorization', `Bearer ${token_test_2}`)
+        .expect(200);
+
+      const { message } = res.body;
+      expect(message).toBe(resMessage.verifyCodeResend(user_test_2.email));
+
+      const verifyCodes = await userVerificationCodeRepository.findBy({
+        userId: user_test_2.id,
+      });
+
+      expect(verifyCodes).toHaveLength(1);
+
+      expect(verifyCodes[0]).toBeDefined();
+    });
+  });
+
+  describe('edit user', () => {
+    // no estoy logueado
+
+    const dataToUpdate = {
+      name: 'user_test_2_edit',
+      lastName: '',
+      password: 'Abc123456789.',
+      birthday: new Date('2000-04-30'),
+    };
+
+    it('not token', async () => {
+      await request(server).patch('/auth/edit').send(dataToUpdate).expect(401);
+    });
+
+    it('bad token', async () => {
+      await request(server)
+        .patch('/auth/edit')
+        .set('Authorization', `Bearer ${token_test_2}`)
+        .send(dataToUpdate)
+        .expect(401);
+    });
+
+    it('user not verify', async () => {
+      await request(server)
+        .patch('/auth/edit')
+        .set('Authorization', `Bearer ${token_test_2}`)
+        .send(dataToUpdate)
+        .expect(401);
+    });
+
+    it('email not acepted', async () => {
+      await request(server)
+        .patch('/auth/edit')
+        .set('Authorization', `Bearer ${token_test_1}`)
+        .send({ ...dataToUpdate, email: 'email@email.com' })
+        .expect(400);
+    });
+
+    it('values null', async () => {
+      await request(server)
+        .patch('/auth/edit')
+        .set('Authorization', `Bearer ${token_test_1}`)
+        .send({
+          password: null,
+          birthday: null,
+          lastName: null,
+          name: null,
+        })
+        .expect(400);
+
+      const user = await getUser(userRepository, user_test_1.email);
+
+      expect(user).toEqual(user_test_1);
+    });
+
+    it('success', async () => {
+      const res = await request(server)
+        .patch('/auth/edit')
+        .set('Authorization', `Bearer ${token_test_1}`)
+        .send(dataToUpdate)
+        .expect(200);
+      const { name, lastName, password, birthday } = res.body;
+
+      const user = await getUser(userRepository, user_test_1.email);
+
+      expect(password).toBeUndefined();
+      expect(name).toBe(user.name);
+      expect(lastName).toBe(user.lastName);
+      expect(birthday).toBe(user.birthday);
+    });
   });
 });

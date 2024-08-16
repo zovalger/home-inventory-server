@@ -156,6 +156,10 @@ export class AuthService {
     await queryRunner.startTransaction();
 
     try {
+      await queryRunner.manager.delete(UserVerificationCode, {
+        userId: user.id,
+      });
+
       const verificationCode = this.verificationCodeService.create(user.id);
 
       await queryRunner.manager.save(verificationCode);
@@ -168,9 +172,9 @@ export class AuthService {
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
-      return {
-        message: `forwarded verification code to email ${user.email}`,
-      };
+      return this.responseBodyFormat.basic(
+        this.resMessages.verifyCodeResend(user.email),
+      );
     } catch (error) {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
@@ -183,12 +187,13 @@ export class AuthService {
   // enviar correo de confirmacion para cambiarlo
 
   async updateUser(user: User, updateUserDto: UpdateUserDto) {
+    if (this.isObjetEmpty(updateUserDto))
+      throw new BadRequestException(this.resMessages.objectEmpty);
+
     const { imageUrl: oldImageUrl } = user;
     const { imageUrl, password } = updateUserDto;
 
-    if (password) {
-      updateUserDto.password = bcrypt.hashSync(password, 10);
-    }
+    if (password) updateUserDto.password = bcrypt.hashSync(password, 10);
 
     if (imageUrl) {
       const existImage = await this.filesService.existImageInDB(imageUrl);
@@ -222,6 +227,8 @@ export class AuthService {
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
+      delete userUpdated.password;
+
       return userUpdated;
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -232,6 +239,10 @@ export class AuthService {
   }
 
   // **************** utils ****************
+
+  private isObjetEmpty(obj: any) {
+    return !Object.values(obj).find((v) => v != undefined && v != null);
+  }
 
   private getJwtToken(jwtPayload: JwtPayload) {
     const token = this.jwtService.sign(jwtPayload);

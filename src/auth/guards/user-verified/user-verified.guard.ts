@@ -2,8 +2,8 @@ import {
   BadRequestException,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
@@ -29,7 +29,7 @@ export class UserVerifiedGuard implements CanActivate {
     if (!user) throw new BadRequestException('User not found');
 
     if (!withoutVerified && !user.isVerified)
-      throw new ForbiddenException(`User isn't verified`);
+      throw new UnauthorizedException(`User isn't verified`);
 
     return true;
   }

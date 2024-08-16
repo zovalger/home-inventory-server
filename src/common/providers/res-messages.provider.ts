@@ -5,6 +5,7 @@ export class ResMessages {
   // ************************** genericos **************************
 
   notFound = 'Not found';
+  objectEmpty = 'object is empty';
 
   // ************************** files **************************
   imageNotFound = "The image isn't registed in DB";
@@ -30,6 +31,9 @@ export class ResMessages {
 
   // confirmations
   userVerifySuccess = 'user verify success';
+  verifyCodeResend(email: string) {
+    return `forwarded verification code to email ${email}`;
+  }
 
   // ************************** family **************************
 

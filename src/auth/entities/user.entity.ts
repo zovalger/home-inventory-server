@@ -45,10 +45,8 @@ export class User {
   @Column('text', { nullable: true })
   imageUrl: string;
 
-  @ManyToOne(() => File, { cascade: true })
-  @JoinColumn({
-    referencedColumnName: 'url',
-  })
+  @ManyToOne(() => File)
+  @JoinColumn({ referencedColumnName: 'url' })
   image: File;
 
   @OneToMany(() => FamilyMember, (familyMember) => familyMember.user)

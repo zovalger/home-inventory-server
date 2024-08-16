@@ -20,7 +20,7 @@ export class FilesController {
 
   //todo: validar que el archivo no sea mayor a 480px
   @Post('upload')
-  @Auth()
+  @Auth({ withoutFamilyMember: true })
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
     @GetUser() user: User,

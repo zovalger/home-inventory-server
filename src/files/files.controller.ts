@@ -6,6 +6,8 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  Delete,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -44,8 +46,9 @@ export class FilesController {
     return this.filesService.upload(user, file);
   }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.filesService.remove(+id);
-  // }
+  @Delete(':id')
+  @Auth({ withoutFamilyMember: true })
+  delete(@Param('id') id: string) {
+    return this.filesService.deleteImage(id);
+  }
 }

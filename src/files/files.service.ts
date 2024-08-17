@@ -1,20 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 
 import { User } from '../auth/entities';
 import { File } from './entities';
 
 import { CloudinaryService } from './cloudinary/cloudinary.service';
+import { ResMessages } from '../common/providers';
 
 @Injectable()
 export class FilesService {
   constructor(
+    private readonly resMessages: ResMessages,
     private readonly cloudinaryService: CloudinaryService,
     @InjectRepository(File)
     private readonly fileRepository: Repository<File>,
-    private readonly dataSource: DataSource,
   ) {}
 
   async upload(user: User, fileToUpload: Express.Multer.File) {
@@ -38,20 +39,24 @@ export class FilesService {
       ? await this.fileRepository.findOneBy({ id: term })
       : await this.fileRepository.findOneBy({ url: term });
 
+    if (!file) throw new NotFoundException(this.resMessages.imageNotFound);
+
     return file;
   }
 
   async existImageInDB(url: string): Promise<boolean> {
     return !!(await this.fileRepository.countBy({ url }));
   }
+
   async deleteImage(term: string) {
     const file = await this.getImage(term);
 
-    if (file) await this.fileRepository.delete(file);
-  }
-
-  async deleteImageByQueryRunner(queryRunner: QueryRunner, url: string) {
-    await queryRunner.manager.delete(File, { url });
+    try {
+      await this.cloudinaryService.deleteFile(file.serviceId);
+      await this.fileRepository.delete(file);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async deleteUserImageByQueryRunner(queryRunner: QueryRunner, url: string) {
@@ -60,5 +65,16 @@ export class FilesService {
     });
 
     if (!isUsed) await this.deleteImageByQueryRunner(queryRunner, url);
+  }
+
+  async deleteImageByQueryRunner(queryRunner: QueryRunner, url: string) {
+    const file = await this.getImage(url);
+
+    try {
+      this.cloudinaryService.deleteFile(file.serviceId);
+      await queryRunner.manager.delete(File, { url });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

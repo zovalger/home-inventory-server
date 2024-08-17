@@ -93,6 +93,12 @@ describe('FilesModule (e2e)', () => {
   afterEach(async () => {
     usersAndToken = [];
 
+    // const files = await fileRepository.find();
+
+    // for (const file of files) {
+
+    // }
+
     await fileRepository.delete({});
     await userVerificationCodeRepository.delete({});
     await userRepository.delete({});
@@ -139,6 +145,15 @@ describe('FilesModule (e2e)', () => {
         );
       });
 
+      it('array images', async () => {
+        await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .attach('file', './test/assets/image.webp')
+          .attach('file', './test/assets/small_image.jpg')
+          .expect(400);
+      });
+
       describe('diferent format', () => {
         it('pdf', async () => {
           await request(server)
@@ -161,17 +176,9 @@ describe('FilesModule (e2e)', () => {
             .post('/files/upload')
             .set('Authorization', `Bearer ${usersAndToken[0].token}`)
             .attach('file', './test/assets/image.gif')
+
             .expect(400);
         });
-      });
-
-      it('array images', async () => {
-        await request(server)
-          .post('/files/upload')
-          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
-          .attach('file', './test/assets/image.webp')
-          .attach('file', './test/assets/small_image.jpg')
-          .expect(400);
       });
     });
 
@@ -204,6 +211,48 @@ describe('FilesModule (e2e)', () => {
           .expect(201);
 
         expect(res.body.url).toBeDefined();
+      });
+    });
+
+    describe('delete', () => {
+      describe('fail by', () => {
+        it('no token', async () =>
+          await request(server).delete('/files/123456').expect(401));
+
+        it('user no verify', async () =>
+          await request(server)
+            .delete('/files/123456')
+            .set('Authorization', `Bearer ${usersAndToken[1].token}`)
+            .expect(401));
+
+        it('bad id', async () =>
+          await request(server)
+            .delete('/files/123456')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .expect(404));
+
+        it('not found', async () =>
+          await request(server)
+            .delete('/files/061fdc52-ecbe-41e4-82ce-1457bfc49cfd')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .expect(404));
+      });
+
+      it('success', async () => {
+        const {
+          body: { url },
+        } = await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .attach('file', './test/assets/image.png')
+          .expect(201);
+
+        const file = await fileRepository.findOneBy({ url });
+
+        await request(server)
+          .delete(`/files/${file.id}`)
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .expect(200);
       });
     });
   });

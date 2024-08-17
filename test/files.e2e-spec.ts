@@ -28,7 +28,7 @@ describe('FilesModule (e2e)', () => {
   // *********************** data ***********************
   // full info
   const userData_test_1 = {
-    email: 'user_test_auth_1@gmail.com',
+    email: 'user_test_file_1@gmail.com',
     password: 'Ab123456.',
     name: 'user_test_1',
     lastName: 'dev',
@@ -37,7 +37,13 @@ describe('FilesModule (e2e)', () => {
 
   // minimum info
   const userData_test_2 = {
-    email: 'user_test_auth_2@gmail.com',
+    email: 'user_test_file_2@gmail.com',
+    password: 'Ab123456.',
+    name: 'user_test_2',
+  };
+
+  const userData_test_3 = {
+    email: 'user_test_file_3@gmail.com',
     password: 'Ab123456.',
     name: 'user_test_2',
   };
@@ -84,20 +90,27 @@ describe('FilesModule (e2e)', () => {
   });
 
   beforeEach(async () => {
-    usersAndToken = await userSetup([userData_test_1, userData_test_2], 1, {
-      verifyCodeRepository: userVerificationCodeRepository,
-      server,
-    });
+    usersAndToken = await userSetup(
+      [userData_test_1, userData_test_2, userData_test_3],
+      2,
+      {
+        verifyCodeRepository: userVerificationCodeRepository,
+        server,
+      },
+    );
   });
 
   afterEach(async () => {
     usersAndToken = [];
 
-    // const files = await fileRepository.find();
+    const files = await fileRepository.find();
 
-    // for (const file of files) {
-
-    // }
+    for (const file of files) {
+      await request(server)
+        .delete(`/files/${file.id}`)
+        .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+        .expect(200);
+    }
 
     await fileRepository.delete({});
     await userVerificationCodeRepository.delete({});
@@ -119,7 +132,7 @@ describe('FilesModule (e2e)', () => {
       it('user not verify', async () => {
         const { body } = await request(server)
           .post('/files/upload')
-          .set('Authorization', `Bearer ${usersAndToken[1].token}`)
+          .set('Authorization', `Bearer ${usersAndToken[2].token}`)
           .attach('file', './test/assets/small_image.jpg')
           .expect(401);
 
@@ -222,7 +235,7 @@ describe('FilesModule (e2e)', () => {
         it('user no verify', async () =>
           await request(server)
             .delete('/files/123456')
-            .set('Authorization', `Bearer ${usersAndToken[1].token}`)
+            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
             .expect(401));
 
         it('bad id', async () =>
@@ -236,23 +249,44 @@ describe('FilesModule (e2e)', () => {
             .delete('/files/061fdc52-ecbe-41e4-82ce-1457bfc49cfd')
             .set('Authorization', `Bearer ${usersAndToken[0].token}`)
             .expect(404));
+
+        it('other user', async () => {
+          // subir imagen a eliminar
+          const {
+            body: { url },
+          } = await request(server)
+            .post('/files/upload')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .attach('file', './test/assets/image.png')
+            .expect(201);
+
+          const file = await fileRepository.findOneBy({ url });
+
+          await request(server)
+            .delete(`/files/${file.id}`)
+            .set('Authorization', `Bearer ${usersAndToken[1].token}`)
+            .expect(403);
+        });
       });
 
-      it('success', async () => {
-        const {
-          body: { url },
-        } = await request(server)
-          .post('/files/upload')
-          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
-          .attach('file', './test/assets/image.png')
-          .expect(201);
+      describe('success', () => {
+        it('same user', async () => {
+          // subir imagen a eliminar
+          const {
+            body: { url },
+          } = await request(server)
+            .post('/files/upload')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .attach('file', './test/assets/image.png')
+            .expect(201);
 
-        const file = await fileRepository.findOneBy({ url });
+          const file = await fileRepository.findOneBy({ url });
 
-        await request(server)
-          .delete(`/files/${file.id}`)
-          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
-          .expect(200);
+          await request(server)
+            .delete(`/files/${file.id}`)
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .expect(200);
+        });
       });
     });
   });

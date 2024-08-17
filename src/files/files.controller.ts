@@ -11,12 +11,15 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-import { FilesService } from './files.service';
+import { EnvConfiguration } from '../config/app.config';
 
 import { User } from '../auth/entities';
+
 import { Auth, GetUser } from '../auth/decorators';
+// import { GetUserFamily } from '../family/decorators';
+
 import { ResMessages } from '../common/providers';
-import { EnvConfiguration } from '../config/app.config';
+import { FilesService } from './files.service';
 
 @Controller('files')
 export class FilesController {
@@ -48,7 +51,7 @@ export class FilesController {
 
   @Delete(':id')
   @Auth({ withoutFamilyMember: true })
-  delete(@Param('id') id: string) {
-    return this.filesService.deleteImage(id);
+  delete(@Param('id') id: string, @GetUser() user: User) {
+    return this.filesService.deleteImage(id, user);
   }
 }

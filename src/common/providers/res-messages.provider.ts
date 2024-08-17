@@ -21,6 +21,7 @@ export class ResMessages {
   userIncorrectLogin = 'email or password incorrect';
   static userNotFound = 'User not found';
   userNotFound = 'User not found';
+  userUnauthorized = 'User Unauthorized';
   userForbidden = 'You not have authorization';
   static userNotVerify = "User isn't verified";
   userNotVerify = "User isn't verified";

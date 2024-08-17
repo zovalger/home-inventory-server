@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryRunner, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
@@ -48,8 +52,11 @@ export class FilesService {
     return !!(await this.fileRepository.countBy({ url }));
   }
 
-  async deleteImage(term: string) {
+  async deleteImage(term: string, user: User) {
     const file = await this.getImage(term);
+
+    if (file.createById != user.id)
+      throw new ForbiddenException(this.resMessages.userForbidden);
 
     try {
       await this.cloudinaryService.deleteFile(file.serviceId);

@@ -8,14 +8,22 @@ export class ResMessages {
   objectEmpty = 'object is empty';
 
   // ************************** files **************************
+  static fileTooLarge = (bytes: number) =>
+    `expected size is less than ${bytes} Bytes`;
+
+  fileTooLarge = (bytes: number) => `expected size is less than ${bytes} Bytes`;
+
   imageNotFound = "The image isn't registed in DB";
 
   // ************************** users **************************
 
   // errors
   userIncorrectLogin = 'email or password incorrect';
+  static userNotFound = 'User not found';
   userNotFound = 'User not found';
   userForbidden = 'You not have authorization';
+  static userNotVerify = "User isn't verified";
+  userNotVerify = "User isn't verified";
   userAlreadyRegisted = 'user is already registed';
   userAlreadyVerified = 'The user is already verified';
 
@@ -31,9 +39,8 @@ export class ResMessages {
 
   // confirmations
   userVerifySuccess = 'user verify success';
-  verifyCodeResend(email: string) {
-    return `forwarded verification code to email ${email}`;
-  }
+  verifyCodeResend = (email: string) =>
+    `forwarded verification code to email ${email}`;
 
   // ************************** family **************************
 
@@ -73,9 +80,8 @@ export class ResMessages {
   productsHasCircularEquivalences =
     "the products have and circular equivalences isn't allowed";
 
-  productHasRelations(productNames: string[]) {
-    return `This product have relations with "${productNames}"`;
-  }
+  productHasRelations = (productNames: string[]) =>
+    `This product have relations with "${productNames}"`;
 
   // ************************** transaccione **************************
 

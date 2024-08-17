@@ -9,12 +9,6 @@ export const EnvConfiguration = () => ({
   db_host: process.env.DB_HOST,
   db_port: process.env.DB_PORT,
 
-  test_db_username: process.env.TEST_DB_USERNAME,
-  test_db_password: process.env.TEST_DB_PASSWORD,
-  test_db_name: process.env.TEST_DB_NAME,
-  test_db_host: process.env.TEST_DB_HOST,
-  test_db_port: process.env.TEST_DB_PORT,
-
   sender_email: process.env.SENDER_EMAIL,
   sender_email_password: process.env.SENDER_EMAIL_PASSWORD,
 
@@ -24,4 +18,7 @@ export const EnvConfiguration = () => ({
   cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
   cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET,
+
+  max_image_size_kib: +process.env.MAX_IMAGE_SIZE_KIB || 100,
+  max_image_size_bytes: (+process.env.MAX_IMAGE_SIZE_KIB || 100) * 1000,
 });

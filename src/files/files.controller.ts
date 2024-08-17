@@ -13,6 +13,8 @@ import { FilesService } from './files.service';
 
 import { User } from '../auth/entities';
 import { Auth, GetUser } from '../auth/decorators';
+import { ResMessages } from '../common/providers';
+import { EnvConfiguration } from '../config/app.config';
 
 @Controller('files')
 export class FilesController {
@@ -27,8 +29,13 @@ export class FilesController {
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 100000 }),
-          new FileTypeValidator({ fileType: 'image/*' }),
+          new MaxFileSizeValidator({
+            maxSize: EnvConfiguration().max_image_size_bytes,
+            message: ResMessages.fileTooLarge,
+          }),
+          new FileTypeValidator({
+            fileType: /image\/png|image\/jpeg|image\/webp/,
+          }),
         ],
       }),
     )

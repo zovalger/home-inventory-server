@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { META_WITHOUTVERIFIED } from '../../decorators/verified-user.decorator';
 import { User } from '../../entities';
+import { ResMessages } from '../../../common/providers';
 
 @Injectable()
 export class UserVerifiedGuard implements CanActivate {
@@ -26,10 +27,10 @@ export class UserVerifiedGuard implements CanActivate {
 
     const user = req.user as User;
 
-    if (!user) throw new BadRequestException('User not found');
+    if (!user) throw new BadRequestException(ResMessages.userNotFound);
 
     if (!withoutVerified && !user.isVerified)
-      throw new UnauthorizedException(`User isn't verified`);
+      throw new UnauthorizedException(ResMessages.userNotVerify);
 
     return true;
   }

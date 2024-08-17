@@ -1,14 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
 import { Server } from 'http';
-import { Repository } from 'typeorm';
-import { User, UserVerificationCode } from '../src/auth/entities';
-import { getRepositoryToken } from '@nestjs/typeorm';
+
+import * as request from 'supertest';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { APP_PIPE } from '@nestjs/core';
-import { ResMessages } from '../src/common/providers';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
+import { EnvConfiguration } from '../src/config/app.config';
+
 import { File } from '../src/files/entities';
+import { User, UserVerificationCode } from '../src/auth/entities';
+
+import { UserAndToken, userSetup } from './utils/userSetup';
+import { ResMessages } from '../src/common/providers';
+import { AppModule } from '../src/app.module';
 
 describe('FilesModule (e2e)', () => {
   let app: INestApplication;
@@ -18,27 +25,25 @@ describe('FilesModule (e2e)', () => {
   let fileRepository: Repository<File>;
   let resMessage: ResMessages;
 
-  const user_test_1_without_verification = {
-    email: 'user_test_1@gmail.com',
+  // *********************** data ***********************
+  // full info
+  const userData_test_1 = {
+    email: 'user_test_auth_1@gmail.com',
     password: 'Ab123456.',
     name: 'user_test_1',
     lastName: 'dev',
-
     birthday: new Date('2002-04-30'),
   };
 
-  let test_1_token_without_verification: string;
-
-  const user_test_2 = {
-    email: 'user_test_2@gmail.com',
+  // minimum info
+  const userData_test_2 = {
+    email: 'user_test_auth_2@gmail.com',
     password: 'Ab123456.',
     name: 'user_test_2',
-    lastName: 'dev',
-
-    birthday: new Date('2002-04-30'),
   };
 
-  let test_2_token_with_verification: string;
+  // *********************** users ***********************
+  let usersAndToken: UserAndToken[];
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -72,89 +77,134 @@ describe('FilesModule (e2e)', () => {
 
     await app.init();
     server = app.getHttpServer();
-
-    const res = await request(server)
-      .post('/auth/register')
-      .send(user_test_1_without_verification)
-      .expect(201);
-
-    test_1_token_without_verification = res.body.token;
-
-    const {
-      body: { data, token: token2 },
-    } = await request(server)
-      .post('/auth/register')
-      .send(user_test_2)
-      .expect(201);
-
-    test_2_token_with_verification = token2;
-
-    const verificationCode = await userVerificationCodeRepository.findOneBy({
-      userId: data.id,
-    });
-
-    await request(server)
-      .post('/auth/verify')
-      .set('Authorization', `Bearer ${test_2_token_with_verification}`)
-      .send({ code: verificationCode.code })
-      .expect(200);
   });
 
-  afterAll(async () => {
+  afterAll(() => {
+    server.close();
+  });
+
+  beforeEach(async () => {
+    usersAndToken = await userSetup([userData_test_1, userData_test_2], 1, {
+      verifyCodeRepository: userVerificationCodeRepository,
+      server,
+    });
+  });
+
+  afterEach(async () => {
+    usersAndToken = [];
+
     await fileRepository.delete({});
     await userVerificationCodeRepository.delete({});
     await userRepository.delete({});
-    server.close();
   });
 
   describe('upload file', () => {
     describe('fail', () => {
-      it('should not token', async () => {
-        const res = await request(server)
-          .post('/files/upload')
-          .set('Authorization', `Bearer ${test_2_token_with_verification}`)
-          .attach('file', './test/assets/small_image.jpg');
-        // .expect(201);
-
-        console.log(res.body);
+      it('user without token', async () => {
+        try {
+          await request(server)
+            .post('/files/upload')
+            .attach('file', './test/assets/small_image.jpg');
+        } catch (error) {
+          expect(error.code).toBe('ECONNRESET');
+        }
       });
 
-      // it('should user not verify', async () => {
-      //   const res = await request(server)
-      //     .post('/files/upload')
-      //     .set('Authorization', `Bearer ${test_2_token_with_verification}`)
-      //     .attach('file', './test/assets/small_image.jpg')
-      //     .expect(201);
+      it('user not verify', async () => {
+        const { body } = await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[1].token}`)
+          .attach('file', './test/assets/small_image.jpg')
+          .expect(401);
 
-      //   const { url } = res.body;
+        expect(body.message).toBe(resMessage.userNotVerify);
+      });
 
-      //   expect(url).toBeDefined();
-      // });
+      it('file not attached', async () => {
+        await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .expect(400);
+      });
 
-      // file too large
-      // archivo no otorgado
+      it('file too large', async () => {
+        const { body } = await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .attach('file', './test/assets/large_image.jpg')
+          .expect(400);
+
+        expect(body.message).toBe(
+          resMessage.fileTooLarge(EnvConfiguration().max_image_size_bytes),
+        );
+      });
+
+      describe('diferent format', () => {
+        it('pdf', async () => {
+          await request(server)
+            .post('/files/upload')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .attach('file', './test/assets/image.pdf')
+            .expect(400);
+        });
+
+        it('exe', async () => {
+          await request(server)
+            .post('/files/upload')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .attach('file', './test/assets/image.exe')
+            .expect(400);
+        });
+
+        it('gif', async () => {
+          await request(server)
+            .post('/files/upload')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .attach('file', './test/assets/image.gif')
+            .expect(400);
+        });
+      });
+
+      it('array images', async () => {
+        await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .attach('file', './test/assets/image.webp')
+          .attach('file', './test/assets/small_image.jpg')
+          .expect(400);
+      });
     });
 
-    // it('file created', async () => {
-    //   const res = await request(server)
-    //     .post('/files/upload')
-    //     .set('Authorization', `Bearer ${test_2_token_with_verification}`)
-    //     .attach('file', './test/assets/small_image.jpg')
-    //     .expect(201);
+    describe('success create', () => {
+      it('jpg', async () => {
+        const res = await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .attach('file', './test/assets/small_image.jpg')
+          .expect(201);
 
-    //   const { url } = res.body;
+        expect(res.body.url).toBeDefined();
+      });
 
-    //   expect(url).toBeDefined();
-    // });
+      it('png', async () => {
+        const res = await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .attach('file', './test/assets/image.png')
+          .expect(201);
 
-    // it('upload without verification', async () => {
+        expect(res.body.url).toBeDefined();
+      });
 
-    //   await request(server)
-    //   .post('/files/upload')
-    //   .attach('file', )
-    //   .send({ code: verificationCode.code })
-    //   .expect(200);
+      it('webp', async () => {
+        const res = await request(server)
+          .post('/files/upload')
+          .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+          .attach('file', './test/assets/image.webp')
+          .expect(201);
 
-    // });
+        expect(res.body.url).toBeDefined();
+      });
+    });
   });
 });

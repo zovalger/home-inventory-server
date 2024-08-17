@@ -19,4 +19,6 @@ export const JoiValidationsSchema = Joi.object({
   CLOUDINARY_CLOUD_NAME: Joi.string().required(),
   CLOUDINARY_API_KEY: Joi.string().required(),
   CLOUDINARY_API_SECRET: Joi.string().required(),
+
+  MAX_IMAGE_SIZE_KIB: Joi.number().default(100),
 });

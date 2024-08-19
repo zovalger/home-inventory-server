@@ -99,7 +99,7 @@ export class AuthController {
     const userUpdated = await this.authService.updateUser(user, updateUserDto);
 
     return this.responseBodyFormat.basic(
-      this.resMessages.userAlreadyRegisted,
+      this.resMessages.userUpdated,
       userUpdated,
     );
   }

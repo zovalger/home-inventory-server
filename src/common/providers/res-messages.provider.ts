@@ -32,6 +32,7 @@ export class ResMessages {
   userRegisterSuccess = 'User registered successfully';
   userLoginSuccess = 'Login success';
   userProfileObtained = 'Profile obtained';
+  userUpdated = 'user updated';
 
   // ******* codigos *******
   // errors

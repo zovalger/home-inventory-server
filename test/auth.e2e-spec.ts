@@ -3,13 +3,14 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { Server } from 'http';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { User, UserVerificationCode } from '../src/auth/entities';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { APP_PIPE } from '@nestjs/core';
 import { ResMessages } from '../src/common/providers';
 import { getUser } from './utils/getUser';
 import { UserAndToken, userSetup } from './utils/userSetup';
+import { File } from '../src/files/entities';
 
 describe('AuthModule (e2e)', () => {
   let app: INestApplication;
@@ -42,6 +43,7 @@ describe('AuthModule (e2e)', () => {
     name: 'user_test_3',
   };
 
+  const badToken = '123456789';
   // *********************** users ***********************
   let usersAndToken: UserAndToken[];
 
@@ -84,15 +86,16 @@ describe('AuthModule (e2e)', () => {
   });
 
   afterEach(async () => {
+    await userRepository.update(
+      { imageUrl: Not(IsNull()) },
+      { imageUrl: null },
+    );
+
     await fileRepository.delete({});
     await userVerificationCodeRepository.delete({});
     await userRepository.delete({});
     usersAndToken = [];
   });
-
-  // ***********************************************************************************
-  //                               creacion de cuenta
-  // ***********************************************************************************
 
   describe('create user account', () => {
     const fakeUserData = {
@@ -192,12 +195,12 @@ describe('AuthModule (e2e)', () => {
   });
 
   describe('with account', () => {
-    // todo: fallar porque no se encuentra la imagen que puso el usuario
     beforeEach(async () => {
       usersAndToken = await userSetup(
         [userData_test_1, userData_test_2, userData_test_3],
         2,
         {
+          userRepository,
           verifyCodeRepository: userVerificationCodeRepository,
           server,
         },
@@ -277,190 +280,298 @@ describe('AuthModule (e2e)', () => {
       });
     });
 
-    // describe('get profile', () => {
-    //   it('should status 401 by bad token', async () => {
-    //     await request(server)
-    //       .get('/auth/profile')
-    //       .set('Authorization', `Bearer ${badToken}`)
-    //       .expect(401);
-    //   });
-    //   it('should status 401 invalid token', async () => {
-    //     await request(server).get('/auth/profile').expect(401);
-    //   });
-    //   it('should user profile', async () => {
-    //     const res = await request(server)
-    //       .get('/auth/profile')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .expect(200);
-    //     expect(res.body.data).toEqual(user_test_1);
-    //   });
-    // });
-    // describe('verification code', () => {
-    //   // que exista el codigo
-    //   it('should exist verify code', async () => {
-    //     const code = await userVerificationCodeRepository.findOne({
-    //       where: { userId: user_test_1.id },
-    //     });
-    //     expect(code).toBeDefined();
-    //   });
-    //   // usuario no logueado
-    //   it('should status 400 user no logged', async () => {
-    //     const { body } = await request(server).post('/auth/verify').expect(401);
-    //     expect(body.message).toBe('Unauthorized');
-    //   });
-    //   it('should status 400 code no provided', async () => {
-    //     await request(server)
-    //       .post('/auth/verify')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .expect(400);
-    //   });
-    //   it('should status 400 invalid code ', async () => {
-    //     await request(server)
-    //       .post('/auth/verify')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .send({ code: 'asdas' })
-    //       .expect(400);
-    //   });
-    //   it('should status 404 code not found', async () => {
-    //     await request(server)
-    //       .post('/auth/verify')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .send({ code: '0000' })
-    //       .expect(404);
-    //   });
-    //   it('should verify user ', async () => {
-    //     const verificationCode = await userVerificationCodeRepository.findOneBy({
-    //       userId: user_test_1.id,
-    //     });
-    //     expect(verificationCode).toBeDefined;
-    //     const res = await request(server)
-    //       .post('/auth/verify')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .send({ code: verificationCode.code })
-    //       .expect(200);
-    //     const { message } = res.body;
-    //     expect(message).toBe(resMessage.userVerifySuccess);
-    //     const user = await getUser(
-    //       userRepository,
-    //       user_test_auth_1_Credentials.email,
-    //     );
-    //     user_test_1 = user;
-    //     const verificationCodeUsed =
-    //       await userVerificationCodeRepository.findOneBy({
-    //         id: verificationCode.id,
-    //       });
-    //     expect(user.isVerified).toBe(true);
-    //     expect(verificationCodeUsed).toBeFalsy();
-    //   });
-    //   it('should status 400 user already verifiy  ', async () => {
-    //     const res = await request(server)
-    //       .post('/auth/verify')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .send({ code: '1234' })
-    //       .expect(400);
-    //     const { message } = res.body;
-    //     expect(message).toBe(resMessage.userAlreadyVerified);
-    //   });
-    //   it('should status 400 verify code expired', async () => {
-    //     const code = await userVerificationCodeRepository.findOneBy({
-    //       userId: user_test_2.id,
-    //     });
-    //     expect(code).toBeDefined();
-    //     code.expireIn = new Date('2000').toISOString();
-    //     await userVerificationCodeRepository.save(code);
-    //     const res = await request(server)
-    //       .post('/auth/verify')
-    //       .set('Authorization', `Bearer ${token_test_2}`)
-    //       .send({ code: code.code })
-    //       .expect(400);
-    //     const { message } = res.body;
-    //     expect(message).toBe(resMessage.userVerifyCodeExpired);
-    //   });
-    // });
-    // describe('Resend verification code', () => {
-    //   // no estoy logueado
-    //   it('should status 401 by bad token', async () => {
-    //     await request(server)
-    //       .get('/auth/profile')
-    //       .set('Authorization', `Bearer ${badToken}`)
-    //       .expect(401);
-    //   });
-    //   it('should status 401 by token not provided', async () => {
-    //     await request(server).get('/auth/profile').expect(401);
-    //   });
-    //   it('success', async () => {
-    //     const res = await request(server)
-    //       .post('/auth/resend_code')
-    //       .set('Authorization', `Bearer ${token_test_2}`)
-    //       .expect(200);
-    //     const { message } = res.body;
-    //     expect(message).toBe(resMessage.verifyCodeResend(user_test_2.email));
-    //     const verifyCodes = await userVerificationCodeRepository.findBy({
-    //       userId: user_test_2.id,
-    //     });
-    //     expect(verifyCodes).toHaveLength(1);
-    //     expect(verifyCodes[0]).toBeDefined();
-    //   });
-    // });
-    // describe('edit user', () => {
-    //   // no estoy logueado
-    //   const dataToUpdate = {
-    //     name: 'user_test_2_edit',
-    //     lastName: '',
-    //     password: 'Abc123456789.',
-    //     birthday: new Date('2000-04-30'),
-    //   };
-    //   it('not token', async () => {
-    //     await request(server).patch('/auth/edit').send(dataToUpdate).expect(401);
-    //   });
-    //   it('bad token', async () => {
-    //     await request(server)
-    //       .patch('/auth/edit')
-    //       .set('Authorization', `Bearer ${token_test_2}`)
-    //       .send(dataToUpdate)
-    //       .expect(401);
-    //   });
-    //   it('user not verify', async () => {
-    //     await request(server)
-    //       .patch('/auth/edit')
-    //       .set('Authorization', `Bearer ${token_test_2}`)
-    //       .send(dataToUpdate)
-    //       .expect(401);
-    //   });
-    //   it('email not acepted', async () => {
-    //     await request(server)
-    //       .patch('/auth/edit')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .send({ ...dataToUpdate, email: 'email@email.com' })
-    //       .expect(400);
-    //   });
-    //   it('values null', async () => {
-    //     await request(server)
-    //       .patch('/auth/edit')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .send({
-    //         password: null,
-    //         birthday: null,
-    //         lastName: null,
-    //         name: null,
-    //       })
-    //       .expect(400);
-    //     const user = await getUser(userRepository, user_test_1.email);
-    //     expect(user).toEqual(user_test_1);
-    //   });
-    //   it('success', async () => {
-    //     const res = await request(server)
-    //       .patch('/auth/edit')
-    //       .set('Authorization', `Bearer ${token_test_1}`)
-    //       .send(dataToUpdate)
-    //       .expect(200);
-    //     const { name, lastName, password, birthday } = res.body;
-    //     const user = await getUser(userRepository, user_test_1.email);
-    //     expect(password).toBeUndefined();
-    //     expect(name).toBe(user.name);
-    //     expect(lastName).toBe(user.lastName);
-    //     expect(birthday).toBe(user.birthday);
-    //   });
-    // });
+    describe('get profile', () => {
+      describe('fail', () => {
+        it('should status 401 not token', async () =>
+          await request(server).get('/auth/profile').expect(401));
+
+        it('should status 401 by invalid token', async () => {
+          await request(server)
+            .get('/auth/profile')
+            .set('Authorization', `Bearer ${badToken}`)
+
+            .expect(401);
+        });
+      });
+
+      it('should user profile', async () => {
+        const {
+          token,
+          user: { email },
+        } = usersAndToken[0];
+
+        const userDB = await getUser(userRepository, email);
+
+        const res = await request(server)
+          .get('/auth/profile')
+          .set('Authorization', `Bearer ${token}`)
+          .expect(200);
+
+        expect(res.body.data).toEqual(userDB);
+      });
+    });
+
+    describe('verification code', () => {
+      describe('fail', () => {
+        it('should status 400 user no logged', async () => {
+          const { body } = await request(server)
+            .post('/auth/verify')
+            .expect(401);
+
+          expect(body.message).toBe('Unauthorized');
+        });
+
+        it('should status 400 code no provided', async () => {
+          await request(server)
+            .post('/auth/verify')
+            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .expect(400);
+        });
+
+        it('should status 400 invalid code ', async () => {
+          await request(server)
+            .post('/auth/verify')
+            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .send({ code: 'asdas' })
+            .expect(400);
+        });
+
+        it('should status 404 code not found', async () => {
+          await request(server)
+            .post('/auth/verify')
+            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .send({ code: '0000' })
+            .expect(404);
+        });
+
+        it('should status 400 user already verifiy  ', async () => {
+          const {
+            body: { message },
+          } = await request(server)
+            .post('/auth/verify')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .send({ code: '1234' })
+            .expect(400);
+
+          expect(message).toBe(resMessage.userAlreadyVerified);
+        });
+
+        it('should status 400 verify code expired', async () => {
+          const code = await userVerificationCodeRepository.findOneBy({
+            userId: usersAndToken[2].user.id,
+          });
+
+          expect(code).toBeDefined();
+
+          code.expireIn = new Date('2000').toISOString();
+
+          await userVerificationCodeRepository.save(code);
+
+          const {
+            body: { message },
+          } = await request(server)
+            .post('/auth/verify')
+            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .send({ code: code.code })
+            .expect(400);
+
+          expect(message).toBe(resMessage.userVerifyCodeExpired);
+        });
+      });
+
+      describe('success', () => {
+        it('should verify user ', async () => {
+          const code = await userVerificationCodeRepository.findOne({
+            where: { userId: usersAndToken[2].user.id },
+          });
+          expect(code).toBeDefined();
+
+          const {
+            body: { message },
+          } = await request(server)
+            .post('/auth/verify')
+            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .send({ code: code.code })
+            .expect(200);
+
+          expect(message).toBe(resMessage.userVerifySuccess);
+
+          const user = await getUser(
+            userRepository,
+            usersAndToken[2].user.email,
+          );
+
+          const verificationCodeUsed =
+            await userVerificationCodeRepository.findOneBy({
+              id: code.id,
+            });
+
+          expect(user.isVerified).toBe(true);
+          expect(verificationCodeUsed).toBeFalsy();
+        });
+      });
+    });
+
+    describe('Resend verification code', () => {
+      describe('fail', () => {
+        it('should status 401 by token not provided', async () =>
+          await request(server).get('/auth/profile').expect(401));
+
+        it('should status 401 by bad token', async () =>
+          await request(server)
+            .get('/auth/profile')
+            .set('Authorization', `Bearer ${badToken}`)
+            .expect(401));
+      });
+
+      it('should resend code', async () => {
+        const {
+          body: { message },
+        } = await request(server)
+          .post('/auth/resend_code')
+          .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+          .expect(200);
+
+        const { id, email } = usersAndToken[2].user;
+
+        expect(message).toBe(resMessage.verifyCodeResend(email));
+
+        const verifyCodes = await userVerificationCodeRepository.findBy({
+          userId: id,
+        });
+
+        expect(verifyCodes).toHaveLength(1);
+        expect(verifyCodes[0]).toBeDefined();
+      });
+    });
+
+    describe('edit user', () => {
+      const dataToUpdate = {
+        name: 'user_test_2_edit',
+        lastName: '',
+        password: 'Abc123456789.',
+        birthday: new Date('2000-04-30'),
+      };
+
+      describe('fail', () => {
+        it('not token', async () =>
+          await request(server)
+            .patch('/auth/edit')
+            .send(dataToUpdate)
+            .expect(401));
+
+        it('bad token', async () => {
+          await request(server)
+            .patch('/auth/edit')
+            .set('Authorization', `Bearer ${badToken}`)
+            .send(dataToUpdate)
+            .expect(401);
+        });
+
+        it('user not verify', async () =>
+          await request(server)
+            .patch('/auth/edit')
+            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .send(dataToUpdate)
+            .expect(401));
+
+        it('email not acepted', async () =>
+          await request(server)
+            .patch('/auth/edit')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .send({ ...dataToUpdate, email: 'email@email.com' })
+            .expect(400));
+
+        it('null values', async () => {
+          await request(server)
+            .patch('/auth/edit')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .send({
+              password: null,
+              birthday: null,
+              lastName: null,
+              name: null,
+            })
+            .expect(400);
+
+          const { user: lastUserData } = usersAndToken[0];
+
+          const user = await getUser(userRepository, lastUserData.email);
+
+          expect(user).toEqual(lastUserData);
+        });
+
+        it('image not found', async () => {
+          await request(server)
+            .patch('/auth/edit')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .send({
+              imageUrl: 'http://imagen.png',
+            })
+            .expect(400);
+
+          const { user: lastUserData } = usersAndToken[0];
+
+          const user = await getUser(userRepository, lastUserData.email);
+
+          expect(user).toEqual(lastUserData);
+        });
+
+        // todo: fallar porque no se encuentra la imagen que puso el usuario
+      });
+
+      describe('success', () => {
+        it('rest of values', async () => {
+          const {
+            body: {
+              data: { name, lastName, password, birthday },
+            },
+          } = await request(server)
+            .patch('/auth/edit')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .send(dataToUpdate)
+            .expect(200);
+
+          const user = await getUser(
+            userRepository,
+            usersAndToken[0].user.email,
+          );
+
+          expect(password).toBeUndefined();
+          expect(name).toBe(user.name);
+          expect(lastName).toBe(user.lastName);
+          expect(birthday).toBe(user.birthday);
+        });
+
+        it('change image', async () => {
+          const {
+            body: { url },
+          } = await request(server)
+            .post('/files/upload')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .attach('file', './test/assets/small_image.jpg')
+            .expect(201);
+
+          expect(url).toBeDefined();
+
+          const res = await request(server)
+            .patch('/auth/edit')
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .send({ imageUrl: url })
+            .expect(200);
+
+          const userUpdated = res.body.data;
+
+          const user = await getUser(
+            userRepository,
+            usersAndToken[0].user.email,
+          );
+
+          expect(userUpdated).toEqual(user);
+
+          expect(user.imageUrl).toBe(url);
+        });
+      });
+    });
   });
 });

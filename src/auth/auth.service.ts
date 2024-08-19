@@ -72,11 +72,7 @@ export class AuthService {
 
       delete user.password;
 
-      return this.responseBodyFormat.withToken(
-        this.getJwtToken({ id: user.id }),
-        this.resMessages.userRegisterSuccess,
-        user,
-      );
+      return { token: this.getJwtToken({ id: user.id }), user };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
@@ -102,17 +98,11 @@ export class AuthService {
     if (!bcrypt.compareSync(password, user.password))
       throw new BadRequestException(this.resMessages.userIncorrectLogin);
 
-    return this.responseBodyFormat.withToken(
-      this.getJwtToken({ id: user.id }),
-      this.resMessages.userLoginSuccess,
-    );
+    return this.getJwtToken({ id: user.id });
   }
 
   async profile(user: User) {
-    return this.responseBodyFormat.basic(
-      this.resMessages.userProfileObtained,
-      user,
-    );
+    return user;
   }
 
   async verify(user: User, verificationCodeDto: VerificationCodeDto) {
@@ -141,7 +131,7 @@ export class AuthService {
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
-      return this.responseBodyFormat.basic(this.resMessages.userVerifySuccess);
+      return;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
@@ -172,9 +162,7 @@ export class AuthService {
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
-      return this.responseBodyFormat.basic(
-        this.resMessages.verifyCodeResend(user.email),
-      );
+      return;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
@@ -183,20 +171,19 @@ export class AuthService {
     }
   }
 
-  // todo: hacer validacion al cambiar de email
-  // enviar correo de confirmacion para cambiarlo
-
   async updateUser(user: User, updateUserDto: UpdateUserDto) {
     if (this.isObjetEmpty(updateUserDto))
       throw new BadRequestException(this.resMessages.objectEmpty);
 
     const { imageUrl: oldImageUrl } = user;
-    const { imageUrl, password } = updateUserDto;
+    const { imageUrl, password, ...resData } = updateUserDto;
 
-    if (password) updateUserDto.password = bcrypt.hashSync(password, 10);
+    let newPassword: string;
+    if (password) newPassword = bcrypt.hashSync(password, 10);
 
     if (imageUrl) {
       const existImage = await this.filesService.existImageInDB(imageUrl);
+
       if (!existImage)
         throw new BadRequestException(this.resMessages.imageNotFound);
     }
@@ -208,13 +195,14 @@ export class AuthService {
     try {
       const userUpdated = await this.userRepository.preload({
         id: user.id,
-        ...updateUserDto,
+        ...resData,
       });
-
-      userUpdated.imageUrl = imageUrl !== undefined ? imageUrl : oldImageUrl;
 
       if (!userUpdated)
         throw new NotFoundException(this.resMessages.userNotFound);
+
+      userUpdated.imageUrl = imageUrl !== undefined ? imageUrl : oldImageUrl;
+      if (newPassword) userUpdated.password = newPassword;
 
       await queryRunner.manager.save(userUpdated);
 
@@ -224,6 +212,7 @@ export class AuthService {
           oldImageUrl,
         );
       }
+
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
@@ -237,6 +226,9 @@ export class AuthService {
       this.errorHandleProvider.handle(error);
     }
   }
+
+  // todo: hacer validacion al cambiar de email
+  // enviar correo de confirmacion para cambiarlo
 
   // **************** utils ****************
 

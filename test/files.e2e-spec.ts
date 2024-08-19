@@ -94,6 +94,7 @@ describe('FilesModule (e2e)', () => {
       [userData_test_1, userData_test_2, userData_test_3],
       2,
       {
+        userRepository,
         verifyCodeRepository: userVerificationCodeRepository,
         server,
       },

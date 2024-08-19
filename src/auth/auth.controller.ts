@@ -17,53 +17,91 @@ import { GetUser } from './decorators/get-user.decorator';
 import { VerificationCodeDto } from './dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+import {
+  ErrorHandleProvider,
+  ResMessages,
+  ResponseBodyFormat,
+} from '../common/providers';
+
 import { AuthService } from './auth.service';
 import { CreateUserPipe, EmailFormatEmailPipe, UpdateUserPipe } from './pipes';
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly resMessages: ResMessages,
+    private readonly errorHandleProvider: ErrorHandleProvider,
+    private readonly responseBodyFormat: ResponseBodyFormat,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post('register')
-  create(@Body(CreateUserPipe) createAuthDto: CreateUserDto) {
-    return this.authService.create(createAuthDto);
+  async create(@Body(CreateUserPipe) createAuthDto: CreateUserDto) {
+    const { token, user } = await this.authService.create(createAuthDto);
+
+    return this.responseBodyFormat.withToken(
+      token,
+      this.resMessages.userRegisterSuccess,
+      user,
+    );
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body(EmailFormatEmailPipe) loginUserDto: LoginUserDto) {
-    return this.authService.login(loginUserDto);
+  async login(@Body(EmailFormatEmailPipe) loginUserDto: LoginUserDto) {
+    const token = await this.authService.login(loginUserDto);
+
+    return this.responseBodyFormat.withToken(
+      token,
+      this.resMessages.userLoginSuccess,
+    );
   }
 
   @Get('profile')
   @Auth({ withoutVerification: true, withoutFamilyMember: true })
-  profile(@GetUser() user: User) {
-    return this.authService.profile(user);
+  async profile(@GetUser() user: User) {
+    const data = await this.authService.profile(user);
+
+    return this.responseBodyFormat.basic(
+      this.resMessages.userProfileObtained,
+      data,
+    );
   }
 
   @Post('verify')
   @Auth({ withoutVerification: true, withoutFamilyMember: true })
   @HttpCode(HttpStatus.OK)
-  verify(
+  async verify(
     @GetUser() user: User,
     @Body() verificationCodeDto: VerificationCodeDto,
   ) {
-    return this.authService.verify(user, verificationCodeDto);
+    await this.authService.verify(user, verificationCodeDto);
+
+    return this.responseBodyFormat.basic(this.resMessages.userVerifySuccess);
   }
 
   @Post('resend_code')
   @HttpCode(HttpStatus.OK)
   @Auth({ withoutVerification: true, withoutFamilyMember: true })
-  resendVerificationCode(@GetUser() user: User) {
-    return this.authService.resendVerificationCode(user);
+  async resendVerificationCode(@GetUser() user: User) {
+    await this.authService.resendVerificationCode(user);
+
+    return this.responseBodyFormat.basic(
+      this.resMessages.verifyCodeResend(user.email),
+    );
   }
 
   @Patch('edit')
   @Auth({ withoutFamilyMember: true })
-  editUser(
+  async editUser(
     @GetUser() user: User,
     @Body(UpdateUserPipe) updateUserDto: UpdateUserDto,
   ) {
-    return this.authService.updateUser(user, updateUserDto);
+    const userUpdated = await this.authService.updateUser(user, updateUserDto);
+
+    return this.responseBodyFormat.basic(
+      this.resMessages.userAlreadyRegisted,
+      userUpdated,
+    );
   }
 
   // @Patch('edit/email')

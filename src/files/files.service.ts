@@ -49,7 +49,7 @@ export class FilesService {
   }
 
   async existImageInDB(url: string): Promise<boolean> {
-    return !!(await this.fileRepository.countBy({ url }));
+    return await this.fileRepository.existsBy({ url });
   }
 
   async deleteImage(term: string, user: User) {

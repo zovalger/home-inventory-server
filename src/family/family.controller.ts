@@ -93,6 +93,9 @@ export class FamilyController {
     });
   }
 
+  // todo: eliminar grupo
+  // todo: dar el rol ouwner a otro miembro
+
   // ************************************************************
   //                      invitaciones
   // ************************************************************
@@ -113,7 +116,7 @@ export class FamilyController {
 
   // todo: colocar query segun estado
   @Get('invitations')
-  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  @Auth({ familyRole: [FamilyRoles.ouwner] })
   getInvitationOfFamily(@GetUserFamily('id') familyId: string) {
     return this.familyService.getInvitationOfFamily(familyId);
   }
@@ -145,7 +148,7 @@ export class FamilyController {
   }
 
   @Delete('invitations/:id/cancel')
-  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  @Auth({ familyRole: [FamilyRoles.ouwner] })
   cancelInvitation(
     @Param('id', new ParseUUIDPipe()) invitationId: string,
     @GetUserFamily() family: Family,

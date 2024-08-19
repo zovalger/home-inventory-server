@@ -101,8 +101,6 @@ describe('FilesModule (e2e)', () => {
   });
 
   afterEach(async () => {
-    usersAndToken = [];
-
     const files = await fileRepository.find();
 
     for (const file of files) {
@@ -111,6 +109,8 @@ describe('FilesModule (e2e)', () => {
         .set('Authorization', `Bearer ${usersAndToken[0].token}`)
         .expect(200);
     }
+
+    usersAndToken = [];
 
     await fileRepository.delete({});
     await userVerificationCodeRepository.delete({});

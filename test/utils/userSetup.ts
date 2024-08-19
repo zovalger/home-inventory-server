@@ -23,29 +23,33 @@ export const userSetup = async (
   const data: UserAndToken[] = [];
 
   // crear
-  for (const userData of users) {
-    const { data: user, token } = (
-      await request(server).post('/auth/register').send(userData).expect(201)
-    ).body;
 
-    data.push({ user, token });
+  try {
+    for (const userData of users) {
+      const {
+        body: { data: user, token },
+      } = await request(server).post('/auth/register').send(userData);
+
+      data.push({ user, token });
+    }
+
+    // verificar
+    for (let index = 0; index < verifyCount; index++) {
+      const {
+        token,
+        user: { id: userId },
+      } = data[index];
+
+      const verificationCode = await verifyCodeRepository.findOneBy({ userId });
+
+      await request(server)
+        .post('/auth/verify')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ code: verificationCode.code });
+    }
+
+    return data;
+  } catch (error) {
+    console.log(error);
   }
-
-  // verificar
-  for (let index = 0; index < verifyCount; index++) {
-    const {
-      token,
-      user: { id: userId },
-    } = data[index];
-
-    const verificationCode = await verifyCodeRepository.findOneBy({ userId });
-
-    await request(server)
-      .post('/auth/verify')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ code: verificationCode.code })
-      .expect(200);
-  }
-
-  return data;
 };

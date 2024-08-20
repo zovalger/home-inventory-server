@@ -11,6 +11,7 @@ import { ResMessages } from '../src/common/providers';
 import { getUser } from './utils/getUser';
 import { UserAndToken, userSetup } from './utils/userSetup';
 import { File } from '../src/files/entities';
+import { usersToVerify } from './data';
 
 describe('AuthModule (e2e)', () => {
   let app: INestApplication;
@@ -20,32 +21,10 @@ describe('AuthModule (e2e)', () => {
   let fileRepository: Repository<File>;
   let resMessage: ResMessages;
 
-  // *********************** data ***********************
-  // full info
-  const userData_test_1 = {
-    email: 'user_test_auth_1@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_1',
-    lastName: 'dev',
-    birthday: new Date('2002-04-30'),
-  };
-
-  // minimum info
-  const userData_test_2 = {
-    email: 'user_test_auth_2@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_2',
-  };
-
-  const userData_test_3 = {
-    email: 'user_test_auth_3@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_3',
-  };
-
-  const badToken = '123456789';
   // *********************** users ***********************
   let usersAndToken: UserAndToken[];
+  let usersAndTokenNotVerify: UserAndToken[];
+  const badToken = '123456789';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -163,12 +142,12 @@ describe('AuthModule (e2e)', () => {
       it('with the minimun info', async () => {
         const res = await request(server)
           .post('/auth/register')
-          .send(userData_test_2)
+          .send(usersToVerify[1])
           .expect(201);
 
         const { data, token, message } = res.body;
 
-        const user = await getUser(userRepository, userData_test_2.email);
+        const user = await getUser(userRepository, usersToVerify[1].email);
 
         expect(user).toBeDefined();
         expect(data).toEqual(user);
@@ -179,12 +158,12 @@ describe('AuthModule (e2e)', () => {
       it('should create user account successfull', async () => {
         const res = await request(server)
           .post('/auth/register')
-          .send(userData_test_1)
+          .send(usersToVerify[0])
           .expect(201);
 
         const { data, token, message } = res.body;
 
-        const user = await getUser(userRepository, userData_test_1.email);
+        const user = await getUser(userRepository, usersToVerify[0].email);
 
         expect(user).toBeDefined();
         expect(data).toEqual(user);
@@ -196,35 +175,34 @@ describe('AuthModule (e2e)', () => {
 
   describe('with account', () => {
     beforeEach(async () => {
-      usersAndToken = await userSetup(
-        [userData_test_1, userData_test_2, userData_test_3],
-        2,
-        {
-          userRepository,
-          verifyCodeRepository: userVerificationCodeRepository,
-          server,
-        },
-      );
+      const { verify, notVerify } = await userSetup({
+        userRepository,
+        verifyCodeRepository: userVerificationCodeRepository,
+        server,
+      });
+
+      usersAndToken = verify;
+      usersAndTokenNotVerify = notVerify;
     });
     describe('login', () => {
       describe('fail', () => {
         it('should 400 bad request for incorrect email', async () =>
           await request(server)
             .post('/auth/login')
-            .send({ password: userData_test_1.password, email: 'google' })
+            .send({ password: usersToVerify[0].password, email: 'google' })
             .expect(400));
 
         it('should 400 bad request for not strong password ', async () =>
           await request(server)
             .post('/auth/login')
-            .send({ email: userData_test_1.email, password: '12' })
+            .send({ email: usersToVerify[0].email, password: '12' })
             .expect(400));
 
         it('should 400 bad request for email not registed', async () => {
           const res = await request(server)
             .post('/auth/login')
             .send({
-              password: userData_test_1.password,
+              password: usersToVerify[0].password,
               email: 'google@gmail.com',
             })
             .expect(400);
@@ -238,7 +216,7 @@ describe('AuthModule (e2e)', () => {
           const res = await request(server)
             .post('/auth/login')
             .send({
-              email: userData_test_1.email,
+              email: usersToVerify[0].email,
               password: '123456739Gb..',
             })
             .expect(400);
@@ -251,7 +229,7 @@ describe('AuthModule (e2e)', () => {
 
       describe('success', () => {
         it('should success login', async () => {
-          const { email, password } = userData_test_1;
+          const { email, password } = usersToVerify[0];
 
           const res = await request(server)
             .post('/auth/login')
@@ -265,7 +243,7 @@ describe('AuthModule (e2e)', () => {
         });
 
         it('should success login user_test_2', async () => {
-          const { email, password } = userData_test_1;
+          const { email, password } = usersToVerify[0];
 
           const res = await request(server)
             .post('/auth/login')
@@ -324,14 +302,14 @@ describe('AuthModule (e2e)', () => {
         it('should status 400 code no provided', async () => {
           await request(server)
             .post('/auth/verify')
-            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
             .expect(400);
         });
 
         it('should status 400 invalid code ', async () => {
           await request(server)
             .post('/auth/verify')
-            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
             .send({ code: 'asdas' })
             .expect(400);
         });
@@ -339,7 +317,7 @@ describe('AuthModule (e2e)', () => {
         it('should status 404 code not found', async () => {
           await request(server)
             .post('/auth/verify')
-            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
             .send({ code: '0000' })
             .expect(404);
         });
@@ -358,7 +336,7 @@ describe('AuthModule (e2e)', () => {
 
         it('should status 400 verify code expired', async () => {
           const code = await userVerificationCodeRepository.findOneBy({
-            userId: usersAndToken[2].user.id,
+            userId: usersAndTokenNotVerify[0].user.id,
           });
 
           expect(code).toBeDefined();
@@ -371,7 +349,7 @@ describe('AuthModule (e2e)', () => {
             body: { message },
           } = await request(server)
             .post('/auth/verify')
-            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
             .send({ code: code.code })
             .expect(400);
 
@@ -382,7 +360,7 @@ describe('AuthModule (e2e)', () => {
       describe('success', () => {
         it('should verify user ', async () => {
           const code = await userVerificationCodeRepository.findOne({
-            where: { userId: usersAndToken[2].user.id },
+            where: { userId: usersAndTokenNotVerify[0].user.id },
           });
           expect(code).toBeDefined();
 
@@ -390,7 +368,7 @@ describe('AuthModule (e2e)', () => {
             body: { message },
           } = await request(server)
             .post('/auth/verify')
-            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
             .send({ code: code.code })
             .expect(200);
 
@@ -398,7 +376,7 @@ describe('AuthModule (e2e)', () => {
 
           const user = await getUser(
             userRepository,
-            usersAndToken[2].user.email,
+            usersAndTokenNotVerify[0].user.email,
           );
 
           const verificationCodeUsed =
@@ -429,10 +407,10 @@ describe('AuthModule (e2e)', () => {
           body: { message },
         } = await request(server)
           .post('/auth/resend_code')
-          .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+          .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
           .expect(200);
 
-        const { id, email } = usersAndToken[2].user;
+        const { id, email } = usersAndTokenNotVerify[0].user;
 
         expect(message).toBe(resMessage.verifyCodeResend(email));
 
@@ -471,7 +449,7 @@ describe('AuthModule (e2e)', () => {
         it('user not verify', async () =>
           await request(server)
             .patch('/auth/edit')
-            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
             .send(dataToUpdate)
             .expect(401));
 

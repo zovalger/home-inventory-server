@@ -25,31 +25,9 @@ describe('FilesModule (e2e)', () => {
   let fileRepository: Repository<File>;
   let resMessage: ResMessages;
 
-  // *********************** data ***********************
-  // full info
-  const userData_test_1 = {
-    email: 'user_test_file_1@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_1',
-    lastName: 'dev',
-    birthday: new Date('2002-04-30'),
-  };
-
-  // minimum info
-  const userData_test_2 = {
-    email: 'user_test_file_2@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_2',
-  };
-
-  const userData_test_3 = {
-    email: 'user_test_file_3@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_2',
-  };
-
   // *********************** users ***********************
   let usersAndToken: UserAndToken[];
+  let usersAndTokenNotVerify: UserAndToken[];
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -90,15 +68,14 @@ describe('FilesModule (e2e)', () => {
   });
 
   beforeEach(async () => {
-    usersAndToken = await userSetup(
-      [userData_test_1, userData_test_2, userData_test_3],
-      2,
-      {
-        userRepository,
-        verifyCodeRepository: userVerificationCodeRepository,
-        server,
-      },
-    );
+    const { verify, notVerify } = await userSetup({
+      userRepository,
+      verifyCodeRepository: userVerificationCodeRepository,
+      server,
+    });
+
+    usersAndToken = verify;
+    usersAndTokenNotVerify = notVerify;
   });
 
   afterEach(async () => {
@@ -133,7 +110,7 @@ describe('FilesModule (e2e)', () => {
       it('user not verify', async () => {
         const { body } = await request(server)
           .post('/files/upload')
-          .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+          .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
           .attach('file', './test/assets/small_image.jpg')
           .expect(401);
 
@@ -236,7 +213,7 @@ describe('FilesModule (e2e)', () => {
         it('user no verify', async () =>
           await request(server)
             .delete('/files/123456')
-            .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+            .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
             .expect(401));
 
         it('bad id', async () =>

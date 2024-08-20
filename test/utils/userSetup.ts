@@ -2,9 +2,9 @@ import { Server } from 'http';
 import { Repository } from 'typeorm';
 import * as request from 'supertest';
 
-import { CreateUserDto } from '../../src/auth/dto';
 import { User, UserVerificationCode } from '../../src/auth/entities';
 import { getUser } from './getUser';
+import { usersNotVerify, usersToVerify } from '../data';
 
 interface options {
   userRepository: Repository<User>;
@@ -17,27 +17,35 @@ export interface UserAndToken {
   token: string;
 }
 
-export const userSetup = async (
-  users: CreateUserDto[],
-  verifyCount: number = 1,
-  { userRepository, verifyCodeRepository, server }: options,
-): Promise<UserAndToken[]> => {
-  const data: UserAndToken[] = [];
-
+export const userSetup = async ({
+  userRepository,
+  verifyCodeRepository,
+  server,
+}: options): Promise<{ verify: UserAndToken[]; notVerify: UserAndToken[] }> => {
+  const notVerify: UserAndToken[] = [];
+  const verify: UserAndToken[] = [];
   // crear
 
   try {
-    for (const userData of users) {
+    for (const userData of usersNotVerify) {
       const {
         body: { data: user, token },
       } = await request(server).post('/auth/register').send(userData);
 
-      data.push({ user, token });
+      notVerify.push({ user, token });
+    }
+
+    for (const userData of usersToVerify) {
+      const {
+        body: { data: user, token },
+      } = await request(server).post('/auth/register').send(userData);
+
+      verify.push({ user, token });
     }
 
     // verificar
-    for (let index = 0; index < verifyCount; index++) {
-      const { token, user } = data[index];
+    for (let index = 0; index < verify.length; index++) {
+      const { token, user } = verify[index];
 
       const { id: userId, email } = user;
 
@@ -48,10 +56,10 @@ export const userSetup = async (
         .set('Authorization', `Bearer ${token}`)
         .send({ code: verificationCode.code });
 
-      data[index].user = await getUser(userRepository, email);
+      verify[index].user = await getUser(userRepository, email);
     }
 
-    return data;
+    return { notVerify, verify };
   } catch (error) {
     console.log(error);
   }

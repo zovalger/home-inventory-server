@@ -30,33 +30,11 @@ describe('InventoryModule (e2e)', () => {
 
   let resMessage: ResMessages;
 
-  // *********************** data ***********************
-  // full info
-  const userData_test_1 = {
-    email: 'user_test_product_1@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_1',
-    lastName: 'dev',
-    birthday: new Date('2002-04-30'),
-  };
-
-  // minimum info
-  const userData_test_2 = {
-    email: 'user_test_product_2@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_2',
-  };
-
-  const userData_test_3 = {
-    email: 'user_test_product_3@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_3',
-  };
-
-  const badToken = '123456789';
-
+  
   // *********************** users ***********************
   let usersAndToken: UserAndToken[];
+  let usersAndTokenNotVerify: UserAndToken[];
+  const badToken = '123456789';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -113,15 +91,14 @@ describe('InventoryModule (e2e)', () => {
   });
 
   beforeEach(async () => {
-    usersAndToken = await userSetup(
-      [userData_test_1, userData_test_2, userData_test_3],
-      2,
-      {
-        userRepository,
-        verifyCodeRepository: userVerificationCodeRepository,
-        server,
-      },
-    );
+    const { verify, notVerify } = await userSetup({
+      userRepository,
+      verifyCodeRepository: userVerificationCodeRepository,
+      server,
+    });
+
+    usersAndToken = verify;
+    usersAndTokenNotVerify = notVerify;
   });
 
   afterEach(async () => {

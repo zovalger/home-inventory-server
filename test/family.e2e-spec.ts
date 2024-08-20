@@ -6,11 +6,12 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import * as request from 'supertest';
 
-import { Family } from '../src/family/entities';
+import { Family, FamilyMember } from '../src/family/entities';
 import { User, UserVerificationCode } from '../src/auth/entities';
 import { ResMessages } from '../src/common/providers';
 import { AppModule } from '../src/app.module';
-import { UserAndToken, userSetup, getUser } from './utils';
+import { UserAndToken, userSetup } from './utils';
+import { familyData } from './data';
 
 describe('FamilyModule (e2e)', () => {
   let app: INestApplication;
@@ -19,34 +20,16 @@ describe('FamilyModule (e2e)', () => {
   let userVerificationCodeRepository: Repository<UserVerificationCode>;
   let fileRepository: Repository<File>;
   let familyRepository: Repository<Family>;
+  let familyMemerRepository: Repository<FamilyMember>;
   let resMessage: ResMessages;
 
-  // *********************** data ***********************
-  // full info
-  const userData_test_1 = {
-    email: 'user_test_family_1@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_1',
-    lastName: 'dev',
-    birthday: new Date('2002-04-30'),
-  };
+  const endpointUrl = '/family';
 
-  // minimum info
-  const userData_test_2 = {
-    email: 'user_test_family_2@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_2',
-  };
-
-  const userData_test_3 = {
-    email: 'user_test_family_3@gmail.com',
-    password: 'Ab123456.',
-    name: 'user_test_3',
-  };
-
-  const badToken = '123456789';
   // *********************** users ***********************
   let usersAndToken: UserAndToken[];
+  let usersAndTokenNotVerify: UserAndToken[];
+
+  const badToken = '123456789';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -80,6 +63,10 @@ describe('FamilyModule (e2e)', () => {
       getRepositoryToken(Family),
     );
 
+    familyMemerRepository = moduleFixture.get<Repository<FamilyMember>>(
+      getRepositoryToken(FamilyMember),
+    );
+
     resMessage = moduleFixture.get(ResMessages);
 
     await app.init();
@@ -91,15 +78,14 @@ describe('FamilyModule (e2e)', () => {
   });
 
   beforeEach(async () => {
-    usersAndToken = await userSetup(
-      [userData_test_1, userData_test_2, userData_test_3],
-      2,
-      {
-        userRepository,
-        verifyCodeRepository: userVerificationCodeRepository,
-        server,
-      },
-    );
+    const { verify, notVerify } = await userSetup({
+      userRepository,
+      verifyCodeRepository: userVerificationCodeRepository,
+      server,
+    });
+
+    usersAndToken = verify;
+    usersAndTokenNotVerify = notVerify;
   });
 
   afterEach(async () => {
@@ -107,8 +93,9 @@ describe('FamilyModule (e2e)', () => {
       { imageUrl: Not(IsNull()) },
       { imageUrl: null },
     );
-
     await fileRepository.delete({});
+
+    await familyMemerRepository.delete({});
     await familyRepository.delete({});
     await userVerificationCodeRepository.delete({});
     await userRepository.delete({});
@@ -119,15 +106,46 @@ describe('FamilyModule (e2e)', () => {
   describe('family group', () => {
     describe('Create family', () => {
       describe('fail', () => {
-        // todo: que tenga un token
-        // todo: que el usuario este verificado
-        // todo: que el usuario no este en un grupo
+        it('user without token', async () => {
+          await request(server).post(endpointUrl).expect(401);
+        });
+
+        it('bad token', async () => {
+          await request(server)
+            .post(endpointUrl)
+            .set('Authorization', `Bearer ${badToken}`)
+            .expect(401);
+        });
+
+        it('user not verify', async () => {
+          const { body } = await request(server)
+            .post(endpointUrl)
+            .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
+            .expect(401);
+
+          expect(body.message).toBe(resMessage.userNotVerify);
+        });
+
+        // todo: que pasa si el usuario esta en otro grupo
         // todo: valores nulos
         // todo: imagen no encontrada
       });
 
       describe('success', () => {
-        // todo: crear grupo
+        it('only name', async () => {
+          const { body } = await request(server)
+            .post(endpointUrl)
+            .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+            .send(familyData[0])
+            .expect(201);
+
+          const family = familyRepository.findOneBy({
+            createById: usersAndToken[0].user.id,
+          });
+
+          expect(body.message).toBe(resMessage.familyCreated);
+          expect(body.data).toBe(family);
+        });
         // todo: imagen del grupo
         // todo: que el usuario se haya añadido correctamente a los miembros con rol ouwner
       });

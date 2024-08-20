@@ -52,6 +52,9 @@ export class ResMessages {
 
   userUnauthorizedToFamily = "The user isn't authorized for this family";
 
+  // confirmations
+  familyCreated = 'group family are created succesfully';
+
   // ************************** members **************************
 
   memberNotFound = 'Members not found';

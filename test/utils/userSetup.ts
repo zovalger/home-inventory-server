@@ -17,28 +17,35 @@ export interface UserAndToken {
   token: string;
 }
 
-export const userSetup = async ({
-  userRepository,
-  verifyCodeRepository,
-  server,
-}: options): Promise<{ verify: UserAndToken[]; notVerify: UserAndToken[] }> => {
+export const userSetup = async (
+  prefix: string,
+  { userRepository, verifyCodeRepository, server }: options,
+): Promise<{ verify: UserAndToken[]; notVerify: UserAndToken[] }> => {
   const notVerify: UserAndToken[] = [];
   const verify: UserAndToken[] = [];
   // crear
 
   try {
     for (const userData of usersNotVerify) {
+      const { email } = userData;
+
       const {
         body: { data: user, token },
-      } = await request(server).post('/auth/register').send(userData);
+      } = await request(server)
+        .post('/auth/register')
+        .send({ ...userData, email: `${prefix}_${email}` });
 
       notVerify.push({ user, token });
     }
 
     for (const userData of usersToVerify) {
+      const { email } = userData;
+
       const {
         body: { data: user, token },
-      } = await request(server).post('/auth/register').send(userData);
+      } = await request(server)
+        .post('/auth/register')
+        .send({ ...userData, email: `${prefix}_${email}` });
 
       verify.push({ user, token });
     }

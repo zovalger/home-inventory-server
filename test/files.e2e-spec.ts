@@ -6,7 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { APP_PIPE } from '@nestjs/core';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import { EnvConfiguration } from '../src/config/app.config';
 
@@ -68,7 +68,7 @@ describe('FilesModule (e2e)', () => {
   });
 
   beforeEach(async () => {
-    const { verify, notVerify } = await userSetup({
+    const { verify, notVerify } = await userSetup('files', {
       userRepository,
       verifyCodeRepository: userVerificationCodeRepository,
       server,
@@ -79,8 +79,13 @@ describe('FilesModule (e2e)', () => {
   });
 
   afterEach(async () => {
-    const files = await fileRepository.find();
+    const usersId = [
+      ...usersAndToken.map(({ user }) => user.id),
+      ...usersAndTokenNotVerify.map(({ user }) => user.id),
+    ];
 
+    // todo: eliminar los archivos creados por los usuarios
+    const files = await fileRepository.find();
     for (const file of files) {
       await request(server)
         .delete(`/files/${file.id}`)
@@ -88,11 +93,10 @@ describe('FilesModule (e2e)', () => {
         .expect(200);
     }
 
+    await fileRepository.delete({ createById: In(usersId) });
+    await userVerificationCodeRepository.delete({ userId: In(usersId) });
+    await userRepository.delete({ id: In(usersId) });
     usersAndToken = [];
-
-    await fileRepository.delete({});
-    await userVerificationCodeRepository.delete({});
-    await userRepository.delete({});
   });
 
   describe('upload file', () => {

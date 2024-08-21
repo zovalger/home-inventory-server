@@ -1,16 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
 import { Server } from 'http';
-import { IsNull, Not, Repository } from 'typeorm';
-import { User, UserVerificationCode } from '../src/auth/entities';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { APP_PIPE } from '@nestjs/core';
-import { ResMessages } from '../src/common/providers';
-import { getUser } from './utils/getUser';
-import { UserAndToken, userSetup } from './utils/userSetup';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
+import * as request from 'supertest';
+
+import { User, UserVerificationCode } from '../src/auth/entities';
 import { File } from '../src/files/entities';
+import { AppModule } from '../src/app.module';
+
+import { ResMessages } from '../src/common/providers';
+import { UserAndToken, userSetup, getUser } from './utils';
 import { usersToVerify } from './data';
 
 describe('AuthModule (e2e)', () => {
@@ -62,18 +63,6 @@ describe('AuthModule (e2e)', () => {
 
   afterAll(() => {
     server.close();
-  });
-
-  afterEach(async () => {
-    await userRepository.update(
-      { imageUrl: Not(IsNull()) },
-      { imageUrl: null },
-    );
-
-    await fileRepository.delete({});
-    await userVerificationCodeRepository.delete({});
-    await userRepository.delete({});
-    usersAndToken = [];
   });
 
   describe('create user account', () => {
@@ -139,6 +128,12 @@ describe('AuthModule (e2e)', () => {
     });
 
     describe('success', () => {
+      let userInDB: User;
+
+      afterEach(async () => {
+        await userRepository.delete({ id: userInDB.id });
+      });
+
       it('with the minimun info', async () => {
         const res = await request(server)
           .post('/auth/register')
@@ -148,6 +143,8 @@ describe('AuthModule (e2e)', () => {
         const { data, token, message } = res.body;
 
         const user = await getUser(userRepository, usersToVerify[1].email);
+
+        userInDB = user;
 
         expect(user).toBeDefined();
         expect(data).toEqual(user);
@@ -165,6 +162,8 @@ describe('AuthModule (e2e)', () => {
 
         const user = await getUser(userRepository, usersToVerify[0].email);
 
+        userInDB = user;
+
         expect(user).toBeDefined();
         expect(data).toEqual(user);
         expect(token).toBeDefined();
@@ -175,7 +174,7 @@ describe('AuthModule (e2e)', () => {
 
   describe('with account', () => {
     beforeEach(async () => {
-      const { verify, notVerify } = await userSetup({
+      const { verify, notVerify } = await userSetup('auth', {
         userRepository,
         verifyCodeRepository: userVerificationCodeRepository,
         server,
@@ -184,6 +183,27 @@ describe('AuthModule (e2e)', () => {
       usersAndToken = verify;
       usersAndTokenNotVerify = notVerify;
     });
+
+    afterEach(async () => {
+      const usersId = [
+        ...usersAndToken.map(({ user }) => user.id),
+        ...usersAndTokenNotVerify.map(({ user }) => user.id),
+      ];
+
+      await userRepository.update(
+        {
+          id: In(usersId),
+          imageUrl: Not(IsNull()),
+        },
+        { imageUrl: null },
+      );
+
+      await fileRepository.delete({ createById: In(usersId) });
+      await userVerificationCodeRepository.delete({ userId: In(usersId) });
+      await userRepository.delete({ id: In(usersId) });
+      usersAndToken = [];
+    });
+
     describe('login', () => {
       describe('fail', () => {
         it('should 400 bad request for incorrect email', async () =>

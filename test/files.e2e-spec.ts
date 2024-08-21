@@ -84,8 +84,7 @@ describe('FilesModule (e2e)', () => {
       ...usersAndTokenNotVerify.map(({ user }) => user.id),
     ];
 
-    // todo: eliminar los archivos creados por los usuarios
-    const files = await fileRepository.find();
+    const files = await fileRepository.findBy({ createById: In(usersId) });
     for (const file of files) {
       await request(server)
         .delete(`/files/${file.id}`)

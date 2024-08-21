@@ -2,9 +2,9 @@ import { Reflector } from '@nestjs/core';
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -64,7 +64,7 @@ export class FamilyRoleGuard implements CanActivate {
       relations: { family: true },
     });
 
-    if (!member) throw new ForbiddenException(this.resMessages.familyNotFound);
+    if (!member) throw new NotFoundException(this.resMessages.familyNotFound);
 
     req['family'] = member.family;
     delete member.family;

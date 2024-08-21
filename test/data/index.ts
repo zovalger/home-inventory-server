@@ -1,2 +1,2 @@
 export { familyData } from './familyData';
-export { usersToVerify, usersNotVerify } from './usersData';
+export { usersToVerify, usersNotVerify, UserData } from './usersData';

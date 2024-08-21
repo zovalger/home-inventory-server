@@ -24,10 +24,16 @@ import {
 } from './dto';
 
 import { FamilyService } from './family.service';
+import { ResMessages, ResponseBodyFormat } from '../common/providers';
+import { CreateFamilyPipe, UpdateFamilyPipe } from './pipes';
 
 @Controller('family')
 export class FamilyController {
-  constructor(private readonly familyService: FamilyService) {}
+  constructor(
+    private readonly resMessages: ResMessages,
+    private readonly responseBodyFormat: ResponseBodyFormat,
+    private readonly familyService: FamilyService,
+  ) {}
 
   // ************************************************************
   //                    gestion de familias
@@ -35,23 +41,39 @@ export class FamilyController {
 
   @Post()
   @Auth({ withoutFamilyMember: true })
-  create(@GetUser() user: User, @Body() createFamilyDto: CreateFamilyDto) {
-    return this.familyService.create(user, createFamilyDto);
+  async create(
+    @GetUser() user: User,
+    @Body(CreateFamilyPipe) createFamilyDto: CreateFamilyDto,
+  ) {
+    const family = await this.familyService.create(user, createFamilyDto);
+
+    return this.responseBodyFormat.basic(
+      this.resMessages.familyCreated,
+      family,
+    );
   }
 
   @Get()
   @Auth()
   myFamily(@GetUserFamily() family: Family) {
-    return family;
+    return this.responseBodyFormat.basic(
+      this.resMessages.familyObtained,
+      family,
+    );
   }
 
   @Patch()
   @Auth({ familyRole: [FamilyRoles.ouwner] })
-  update(
-    @GetUserFamily('id') familyId: string,
-    @Body() updateFamilyDto: UpdateFamilyDto,
+  async update(
+    @GetUserFamily() userFamily: Family,
+    @Body(UpdateFamilyPipe) updateFamilyDto: UpdateFamilyDto,
   ) {
-    return this.familyService.update(familyId, updateFamilyDto);
+    const family = await this.familyService.update(userFamily, updateFamilyDto);
+
+    return this.responseBodyFormat.basic(
+      this.resMessages.familyUpdated,
+      family,
+    );
   }
 
   // ************************************************************

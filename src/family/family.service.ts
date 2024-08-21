@@ -41,15 +41,15 @@ export class FamilyService {
     private readonly emailService: EmailService,
   ) {}
 
-  async create(user: User, createFamilyDto: CreateFamilyDto) {
+  async create(user: User, createFamilyDto: CreateFamilyDto): Promise<Family> {
     const { imageUrl } = createFamilyDto;
 
-    const isMemberOfOneFamily = !!(await this.familyMemberRepository.countBy({
+    const isMemberOfOneFamily = await this.familyMemberRepository.existsBy({
       userId: user.id,
-    }));
+    });
 
     if (isMemberOfOneFamily)
-      throw new BadRequestException('The user already has a family group');
+      throw new BadRequestException(this.resMessages.userAlreadyInFamilyGroup);
 
     if (imageUrl) {
       const existImage = await this.filesService.existImageInDB(imageUrl);
@@ -117,7 +117,7 @@ export class FamilyService {
     }
   }
 
-  async update(id: string, updateFamilyDto: UpdateFamilyDto) {
+  async update(family: Family, updateFamilyDto: UpdateFamilyDto) {
     const { imageUrl, name } = updateFamilyDto;
 
     if (imageUrl) {
@@ -131,15 +131,9 @@ export class FamilyService {
     await queryRunner.startTransaction();
 
     try {
-      const family = await this.familyRepository.findOneBy({
-        id,
-      });
-
-      if (!family) throw new NotFoundException(this.resMessages.familyNotFound);
-
       const { imageUrl: oldImageUrl } = family;
 
-      family.imageUrl = imageUrl != undefined ? imageUrl : oldImageUrl;
+      family.imageUrl = imageUrl !== undefined ? imageUrl : oldImageUrl;
 
       if (name) family.name = name;
 

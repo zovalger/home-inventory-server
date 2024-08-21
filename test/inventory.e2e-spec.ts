@@ -3,10 +3,10 @@ import { APP_PIPE } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 import * as request from 'supertest';
 
-import { Family } from '../src/family/entities';
+import { Family, FamilyMember } from '../src/family/entities';
 import { User, UserVerificationCode } from '../src/auth/entities';
 import { ResMessages } from '../src/common/providers';
 import { AppModule } from '../src/app.module';
@@ -16,6 +16,7 @@ import {
   ProductEquivalence,
   ProductTransaction,
 } from '../src/inventory/entities';
+import { File } from '../src/files/entities';
 
 describe('InventoryModule (e2e)', () => {
   let app: INestApplication;
@@ -24,13 +25,13 @@ describe('InventoryModule (e2e)', () => {
   let userVerificationCodeRepository: Repository<UserVerificationCode>;
   let fileRepository: Repository<File>;
   let familyRepository: Repository<Family>;
+  let familyMemerRepository: Repository<FamilyMember>;
   let productRepository: Repository<Product>;
   let transactionRepository: Repository<ProductTransaction>;
   let productEquivalenceRepository: Repository<ProductEquivalence>;
 
   let resMessage: ResMessages;
 
-  
   // *********************** users ***********************
   let usersAndToken: UserAndToken[];
   let usersAndTokenNotVerify: UserAndToken[];
@@ -68,6 +69,10 @@ describe('InventoryModule (e2e)', () => {
       getRepositoryToken(Family),
     );
 
+    familyMemerRepository = moduleFixture.get<Repository<FamilyMember>>(
+      getRepositoryToken(FamilyMember),
+    );
+
     productRepository = moduleFixture.get<Repository<Product>>(
       getRepositoryToken(Product),
     );
@@ -91,7 +96,7 @@ describe('InventoryModule (e2e)', () => {
   });
 
   beforeEach(async () => {
-    const { verify, notVerify } = await userSetup({
+    const { verify, notVerify } = await userSetup('products', {
       userRepository,
       verifyCodeRepository: userVerificationCodeRepository,
       server,
@@ -102,19 +107,34 @@ describe('InventoryModule (e2e)', () => {
   });
 
   afterEach(async () => {
-    await productRepository.update(
-      { imageUrl: Not(IsNull()) },
+    const usersId = [
+      ...usersAndToken.map(({ user }) => user.id),
+      ...usersAndTokenNotVerify.map(({ user }) => user.id),
+    ];
+
+    await familyRepository.update(
+      { createById: In(usersId), imageUrl: Not(IsNull()) },
       { imageUrl: null },
     );
 
-    await fileRepository.delete({});
+    const files = await fileRepository.findBy({ createById: In(usersId) });
+    for (const file of files) {
+      await request(server)
+        .delete(`/files/${file.id}`)
+        .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+        .expect(200);
+    }
+
+    await fileRepository.delete({ createById: In(usersId) });
+
     await transactionRepository.delete({});
     await productEquivalenceRepository.delete({});
     await productRepository.delete({});
-    await familyRepository.delete({});
-    await userVerificationCodeRepository.delete({});
-    await userRepository.delete({});
 
+    await familyMemerRepository.delete({ userId: In(usersId) });
+    await familyRepository.delete({ createById: In(usersId) });
+    await userVerificationCodeRepository.delete({ userId: In(usersId) });
+    await userRepository.delete({ id: In(usersId) });
     usersAndToken = [];
   });
 

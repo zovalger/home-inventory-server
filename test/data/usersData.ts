@@ -1,4 +1,12 @@
-export const usersToVerify = [
+export interface UserData {
+  email: string;
+  password: string;
+  name: string;
+  lastName?: string;
+  birthday?: string | Date;
+}
+
+export const usersToVerify: UserData[] = [
   {
     email: 'user_test_1@gmail.com',
     password: 'Ab123456.',
@@ -18,7 +26,7 @@ export const usersToVerify = [
   },
 ];
 
-export const usersNotVerify = [
+export const usersNotVerify: UserData[] = [
   {
     email: 'user_test_4@gmail.com',
     password: 'Ab123456.',

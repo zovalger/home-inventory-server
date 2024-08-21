@@ -78,7 +78,7 @@ export class FilesService {
     const file = await this.getImage(url);
 
     try {
-      this.cloudinaryService.deleteFile(file.serviceId);
+      await this.cloudinaryService.deleteFile(file.serviceId);
       await queryRunner.manager.delete(File, { url });
     } catch (error) {
       console.log(error);

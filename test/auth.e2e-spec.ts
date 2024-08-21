@@ -131,7 +131,10 @@ describe('AuthModule (e2e)', () => {
       let userInDB: User;
 
       afterEach(async () => {
-        await userRepository.delete({ id: userInDB.id });
+        if (userInDB) {
+          await userVerificationCodeRepository.delete({ userId: userInDB.id });
+          await userRepository.delete({ id: userInDB.id });
+        }
       });
 
       it('with the minimun info', async () => {
@@ -249,7 +252,8 @@ describe('AuthModule (e2e)', () => {
 
       describe('success', () => {
         it('should success login', async () => {
-          const { email, password } = usersToVerify[0];
+          const { email } = usersAndToken[0].user;
+          const { password } = usersAndToken[0].data;
 
           const res = await request(server)
             .post('/auth/login')
@@ -263,7 +267,8 @@ describe('AuthModule (e2e)', () => {
         });
 
         it('should success login user_test_2', async () => {
-          const { email, password } = usersToVerify[0];
+          const { email } = usersAndToken[1].user;
+          const { password } = usersAndToken[1].data;
 
           const res = await request(server)
             .post('/auth/login')

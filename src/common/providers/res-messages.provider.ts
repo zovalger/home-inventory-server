@@ -5,6 +5,7 @@ export class ResMessages {
   // ************************** genericos **************************
 
   notFound = 'Not found';
+  static objectEmpty = 'object is empty';
   objectEmpty = 'object is empty';
 
   // ************************** files **************************
@@ -46,14 +47,16 @@ export class ResMessages {
 
   // ************************** family **************************
 
+  userAlreadyInFamilyGroup = 'The user already has a family group';
+
   familyNotFound = 'Family not found';
-
   userForbiddenToFamily = 'The user is forbidden for this family';
-
   userUnauthorizedToFamily = "The user isn't authorized for this family";
 
   // confirmations
   familyCreated = 'group family are created succesfully';
+  familyObtained = 'family data obtained';
+  familyUpdated = 'group family are updated succesfully';
 
   // ************************** members **************************
 

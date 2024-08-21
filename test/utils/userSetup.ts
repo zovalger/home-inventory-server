@@ -4,7 +4,7 @@ import * as request from 'supertest';
 
 import { User, UserVerificationCode } from '../../src/auth/entities';
 import { getUser } from './getUser';
-import { usersNotVerify, usersToVerify } from '../data';
+import { UserData, usersNotVerify, usersToVerify } from '../data';
 
 interface options {
   userRepository: Repository<User>;
@@ -13,6 +13,7 @@ interface options {
 }
 
 export interface UserAndToken {
+  data: UserData;
   user: User;
   token: string;
 }
@@ -35,7 +36,7 @@ export const userSetup = async (
         .post('/auth/register')
         .send({ ...userData, email: `${prefix}_${email}` });
 
-      notVerify.push({ user, token });
+      notVerify.push({ data: userData, user, token });
     }
 
     for (const userData of usersToVerify) {
@@ -47,7 +48,7 @@ export const userSetup = async (
         .post('/auth/register')
         .send({ ...userData, email: `${prefix}_${email}` });
 
-      verify.push({ user, token });
+      verify.push({ data: userData, user, token });
     }
 
     // verificar

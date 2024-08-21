@@ -75,7 +75,7 @@ export class FamilyRoleGuard implements CanActivate {
 
     if (!roles.includes(member.role))
       throw new UnauthorizedException(
-        this.resMessages.userUnauthorizedToFamily,
+        this.resMessages.userNotHavePermisionInFamily,
       );
 
     return true;

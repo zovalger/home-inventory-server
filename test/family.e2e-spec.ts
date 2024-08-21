@@ -22,7 +22,7 @@ describe('FamilyModule (e2e)', () => {
   let userVerificationCodeRepository: Repository<UserVerificationCode>;
   let fileRepository: Repository<File>;
   let familyRepository: Repository<Family>;
-  let familyMemerRepository: Repository<FamilyMember>;
+  let familyMemberRepository: Repository<FamilyMember>;
   let resMessage: ResMessages;
 
   const endpointUrl = '/family';
@@ -65,7 +65,7 @@ describe('FamilyModule (e2e)', () => {
       getRepositoryToken(Family),
     );
 
-    familyMemerRepository = moduleFixture.get<Repository<FamilyMember>>(
+    familyMemberRepository = moduleFixture.get<Repository<FamilyMember>>(
       getRepositoryToken(FamilyMember),
     );
 
@@ -86,7 +86,7 @@ describe('FamilyModule (e2e)', () => {
     );
     await fileRepository.delete({});
 
-    await familyMemerRepository.delete({});
+    await familyMemberRepository.delete({});
     await familyRepository.delete({});
     await userVerificationCodeRepository.delete({});
     await userRepository.delete({});
@@ -126,7 +126,7 @@ describe('FamilyModule (e2e)', () => {
 
     await fileRepository.delete({ createById: In(usersId) });
 
-    await familyMemerRepository.delete({ userId: In(usersId) });
+    await familyMemberRepository.delete({ userId: In(usersId) });
     await familyRepository.delete({ createById: In(usersId) });
     await userVerificationCodeRepository.delete({ userId: In(usersId) });
     await userRepository.delete({ id: In(usersId) });
@@ -207,7 +207,7 @@ describe('FamilyModule (e2e)', () => {
           expect(body.message).toBe(resMessage.familyCreated);
           expect(body.data).toEqual(family);
 
-          const member = await familyMemerRepository.findOneBy({
+          const member = await familyMemberRepository.findOneBy({
             familyId: family.id,
           });
 
@@ -240,7 +240,7 @@ describe('FamilyModule (e2e)', () => {
           expect(body.message).toBe(resMessage.familyCreated);
           expect(body.data).toEqual(family);
 
-          const member = await familyMemerRepository.findOneBy({
+          const member = await familyMemberRepository.findOneBy({
             familyId: family.id,
           });
 
@@ -351,21 +351,33 @@ describe('FamilyModule (e2e)', () => {
             expect(body.message).toBe(resMessage.imageNotFound);
           });
 
-          // it('user in other group', async () => {
-          //   await request(server)
-          //     .post(endpointUrl)
-          //     .set('Authorization', `Bearer ${usersAndToken[0].token}`)
-          //     .send(familyData[0])
-          //     .expect(201);
+          // todo: que pasa si el usuario no es ouwner
 
-          //   const { body } = await request(server)
-          //     .post(endpointUrl)
-          //     .set('Authorization', `Bearer ${usersAndToken[0].token}`)
-          //     .send(familyData[0])
-          //     .expect(400);
+          it('not ouwner', async () => {
+            const family = await getFamily(
+              familyRepository,
+              usersAndToken[0].user.id,
+            );
 
-          //   expect(body.message).toBe(resMessage.userAlreadyInFamilyGroup);
-          // });
+            await familyMemberRepository.insert({
+              familyId: family.id,
+              userId: usersAndToken[1].user.id,
+              role: FamilyRoles.admin,
+            });
+
+            const res = await request(server)
+              .patch(endpointUrl)
+              .set('Authorization', `Bearer ${usersAndToken[1].token}`)
+              .send({ name: 'not ouwner' })
+              .expect(401);
+
+            expect(res.body.message).toBe(
+              resMessage.userNotHavePermisionInFamily,
+            );
+          });
+
+          // que pasa si el usuario es ouwner de otro grupo
+          // pd: no es posible no se esta proporcionando un id
         });
 
         describe('success', () => {
@@ -438,9 +450,6 @@ describe('FamilyModule (e2e)', () => {
             expect(family.imageUrl).toBeNull();
           });
         });
-
-        // todo: que pasa si el usuario no es ouwner
-        // todo: que pasa si el usuario es ouwner de otro grupo
       });
     });
 

@@ -454,11 +454,56 @@ describe('FamilyModule (e2e)', () => {
     });
 
     describe('members', () => {
+      // beforeEach(async () => {
+      //   await request(server)
+      //     .post(endpointUrl)
+      //     .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+      //     .send(familyData[0])
+      //     .expect(201);
+      // });
       describe('get all', () => {
-        // todo: que pasa si no esta logueado
-        // todo: que pasa si no esta verificado
-        // todo: que pasa si no es miembro de ningun grupo
-        // todo: obtener miembros
+        describe('fail', () => {
+          it('user without token', async () => {
+            await request(server).get(`${endpointUrl}/members`).expect(401);
+          });
+
+          it('bad token', async () => {
+            await request(server)
+              .get(`${endpointUrl}/members`)
+              .set('Authorization', `Bearer ${badToken}`)
+              .expect(401);
+          });
+
+          it('user not verify', async () => {
+            const { body } = await request(server)
+              .get(`${endpointUrl}/members`)
+              .set('Authorization', `Bearer ${usersAndTokenNotVerify[0].token}`)
+              .expect(401);
+
+            expect(body.message).toBe(resMessage.userNotVerify);
+          });
+
+          it('not have family group', async () => {
+            const { body } = await request(server)
+              .get(`${endpointUrl}/members`)
+              .set('Authorization', `Bearer ${usersAndToken[2].token}`)
+              .expect(404);
+
+            expect(body.message).toBe(resMessage.familyNotFound);
+          });
+        });
+
+        describe('success', () => {
+          it('all members', async () => {
+            const { body } = await request(server)
+              .get(`${endpointUrl}/members`)
+              .set('Authorization', `Bearer ${usersAndToken[0].token}`)
+              .expect(200);
+
+            expect(body.message).toBe(resMessage.familyNotFound);
+          });
+          // todo: obtener miembros
+        });
       });
 
       describe('change role', () => {

@@ -1,4 +1,4 @@
-export interface UserData {
+export interface IUserData {
   email: string;
   password: string;
   name: string;
@@ -6,7 +6,7 @@ export interface UserData {
   birthday?: string | Date;
 }
 
-export const usersToVerify: UserData[] = [
+export const usersToVerify: IUserData[] = [
   {
     email: 'user_test_1@gmail.com',
     password: 'Ab123456.',
@@ -26,7 +26,7 @@ export const usersToVerify: UserData[] = [
   },
 ];
 
-export const usersNotVerify: UserData[] = [
+export const usersNotVerify: IUserData[] = [
   {
     email: 'user_test_4@gmail.com',
     password: 'Ab123456.',

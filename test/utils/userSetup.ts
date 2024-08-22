@@ -4,7 +4,7 @@ import * as request from 'supertest';
 
 import { User, UserVerificationCode } from '../../src/auth/entities';
 import { getUser } from './getUser';
-import { UserData, usersNotVerify, usersToVerify } from '../data';
+import { IUserData, usersNotVerify, usersToVerify } from '../data';
 
 interface options {
   userRepository: Repository<User>;
@@ -13,7 +13,7 @@ interface options {
 }
 
 export interface UserAndToken {
-  data: UserData;
+  data: IUserData;
   user: User;
   token: string;
 }

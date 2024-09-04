@@ -4,41 +4,42 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { User } from '../../auth/entities';
 import { File } from '../../files/entities';
-import { FamilyMember } from './family-member.entity';
 
-@Entity('family')
-export class Family {
+@Entity('company')
+export class Company {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column('text', { default: 'free', nullable: false })
-  tier: string;
 
   @Column('text', { nullable: false })
   name: string;
 
   @Column('text', { nullable: false })
-  createById: string;
+  rif_prefix: string;
 
-  @Column('text', { nullable: true })
-  imageUrl: string;
+  @Column('text', { nullable: false })
+  rif_number: string;
+
+  @Column('text', { nullable: false })
+  address: string;
+
+  @Column('text', { nullable: false })
+  createById: string;
 
   @ManyToOne(() => User, (user) => user.id, { nullable: false })
   createBy: User;
 
+  @Column('text', { nullable: true })
+  imageUrl: string;
+
   @ManyToOne(() => File, { cascade: true })
   @JoinColumn({ referencedColumnName: 'url' })
   image?: File;
-
-  @OneToMany(() => FamilyMember, (familyMember) => familyMember.family)
-  members: FamilyMember[];
 
   @CreateDateColumn()
   createAt: string;

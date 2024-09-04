@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
 import { User } from '../auth/entities';
-import { Family, FamilyMember, FamilyMemberInvitation } from './entities';
+import { Family, FamilyMember, FamilyMemberInvitation } from '../company/entities';
 
 import { FamilyMemberInvitationStatus, FamilyRoles } from './interfaces';
 import {
@@ -24,7 +24,7 @@ import { EmailService } from '../email/email.service';
 import { AllUserData } from '../common/interfaces';
 
 @Injectable()
-export class FamilyService {
+export class CompanyService {
   constructor(
     private readonly resMessages: ResMessages,
     private readonly errorHandleProvider: ErrorHandleProvider,
@@ -41,121 +41,7 @@ export class FamilyService {
     private readonly emailService: EmailService,
   ) {}
 
-  async create(user: User, createFamilyDto: CreateFamilyDto): Promise<Family> {
-    const { imageUrl } = createFamilyDto;
 
-    const isMemberOfOneFamily = await this.familyMemberRepository.existsBy({
-      userId: user.id,
-    });
-
-    if (isMemberOfOneFamily)
-      throw new BadRequestException(this.resMessages.userAlreadyInFamilyGroup);
-
-    if (imageUrl) {
-      const existImage = await this.filesService.existImageInDB(imageUrl);
-      if (!existImage)
-        throw new BadRequestException(this.resMessages.imageNotFound);
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const family = this.familyRepository.create({
-        ...createFamilyDto,
-        createById: user.id,
-      });
-
-      await queryRunner.manager.save(family);
-
-      const member = this.familyMemberRepository.create({
-        family,
-        user,
-        role: FamilyRoles.ouwner,
-      });
-
-      await queryRunner.manager.save(member);
-
-      await queryRunner.commitTransaction();
-      await queryRunner.release();
-
-      return family;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      await queryRunner.release();
-
-      this.errorHandleProvider.handle(error);
-    }
-  }
-
-  async getFamily_by_id(id: string) {
-    const family = await this.familyRepository.findOneBy({
-      id,
-    });
-
-    if (!family)
-      throw new NotFoundException(this.resMessages.invitationNotFound);
-
-    return family;
-  }
-
-  async myFamily(user: User) {
-    try {
-      const family = await this.familyRepository.findOne({
-        where: { members: { userId: user.id } },
-        relations: { members: { user: true } },
-      });
-
-      if (!family)
-        throw new NotFoundException("The user haven't a family group");
-
-      return family;
-    } catch (error) {
-      this.errorHandleProvider.handle(error);
-    }
-  }
-
-  async update(family: Family, updateFamilyDto: UpdateFamilyDto) {
-    const { imageUrl, name } = updateFamilyDto;
-
-    if (imageUrl) {
-      const existImage = await this.filesService.existImageInDB(imageUrl);
-      if (!existImage)
-        throw new BadRequestException(this.resMessages.imageNotFound);
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const { imageUrl: oldImageUrl } = family;
-
-      family.imageUrl = imageUrl !== undefined ? imageUrl : oldImageUrl;
-
-      if (name) family.name = name;
-
-      await queryRunner.manager.save(family);
-
-      if (imageUrl != undefined && oldImageUrl && imageUrl != oldImageUrl)
-        await this.filesService.deleteImageByQueryRunner(
-          queryRunner,
-          oldImageUrl,
-        );
-
-      await queryRunner.commitTransaction();
-      await queryRunner.release();
-
-      return family;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      await queryRunner.release();
-
-      this.errorHandleProvider.handle(error);
-    }
-  }
 
   // ************************************************************
   //                    gestion de miembros

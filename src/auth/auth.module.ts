@@ -10,7 +10,6 @@ import { EmailModule } from '../email/email.module';
 import { User, UserVerificationCode } from './entities';
 
 import { FilesModule } from '../files/files.module';
-import { FamilyModule } from '../family/family.module';
 import { CommonModule } from '../common/common.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -37,7 +36,6 @@ import { VerificationCodeService } from './verification-code/verification-code.s
     }),
 
     forwardRef(() => FilesModule),
-    forwardRef(() => FamilyModule),
 
     EmailModule,
   ],

@@ -4,7 +4,7 @@ import {
   createParamDecorator,
 } from '@nestjs/common';
 
-import { FamilyMember } from '../entities';
+import { FamilyMember } from '../../company/entities';
 
 export const GetUserFamilyMember = createParamDecorator(
   (

@@ -227,6 +227,34 @@ export class AuthService {
     }
   }
 
+  // async editUserEmail(user: User, updateUserEmailDto: UpdateUserEmailDto) {
+  //   const queryRunner = this.dataSource.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
+
+  //   try {
+  //     const userUpdated = await this.userRepository.preload({
+  //       id: user.id,
+  //       ...resData,
+  //     });
+
+  //     if (!userUpdated)
+  //       throw new NotFoundException(this.resMessages.userNotFound);
+
+  //     await queryRunner.manager.save(userUpdated);
+
+  //     await queryRunner.commitTransaction();
+  //     await queryRunner.release();
+
+  //     return userUpdated;
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
+  //     await queryRunner.release();
+
+  //     this.errorHandleProvider.handle(error);
+  //   }
+  // }
+
   // todo: hacer validacion al cambiar de email
   // enviar correo de confirmacion para cambiarlo
 

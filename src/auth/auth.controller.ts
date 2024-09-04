@@ -57,7 +57,7 @@ export class AuthController {
   }
 
   @Get('profile')
-  @Auth({ withoutVerification: true, withoutFamilyMember: true })
+  @Auth({ withoutVerification: true })
   async profile(@GetUser() user: User) {
     const data = await this.authService.profile(user);
 
@@ -68,7 +68,7 @@ export class AuthController {
   }
 
   @Post('verify')
-  @Auth({ withoutVerification: true, withoutFamilyMember: true })
+  @Auth({ withoutVerification: true })
   @HttpCode(HttpStatus.OK)
   async verify(
     @GetUser() user: User,
@@ -81,7 +81,7 @@ export class AuthController {
 
   @Post('resend_code')
   @HttpCode(HttpStatus.OK)
-  @Auth({ withoutVerification: true, withoutFamilyMember: true })
+  @Auth({ withoutVerification: true })
   async resendVerificationCode(@GetUser() user: User) {
     await this.authService.resendVerificationCode(user);
 
@@ -91,7 +91,7 @@ export class AuthController {
   }
 
   @Patch('edit')
-  @Auth({ withoutFamilyMember: true })
+  @Auth()
   async editUser(
     @GetUser() user: User,
     @Body(UpdateUserPipe) updateUserDto: UpdateUserDto,
@@ -105,8 +105,11 @@ export class AuthController {
   }
 
   // @Patch('edit/email')
-  // @Auth({ withoutFamilyMember: true })
-  // editUserEmail(@GetUser() user: User, @Body() updateUserDto: UpdateUserDto) {
-  //   return this.authService.updateUser(user, updateUserDto);
+  // @Auth()
+  // editUserEmail(
+  //   @GetUser() user: User,
+  //   @Body() updateUserEmailDto: UpdateUserEmailDto,
+  // ) {
+  //   return this.authService.update(user, updateUserEmailDto);
   // }
 }

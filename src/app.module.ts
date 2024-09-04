@@ -9,13 +9,13 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { EmailModule } from './email/email.module';
 import { FilesModule } from './files/files.module';
-import { FamilyModule } from './family/family.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['.env.test.local'],
+      // envFilePath: ['.env.test.local'],
       load: [EnvConfiguration],
       validationSchema: JoiValidationsSchema,
     }),
@@ -40,9 +40,9 @@ import { InventoryModule } from './inventory/inventory.module';
 
     FilesModule,
 
-    FamilyModule,
-
     InventoryModule,
+
+    CompanyModule,
   ],
   controllers: [],
   providers: [],

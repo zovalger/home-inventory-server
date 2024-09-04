@@ -5,18 +5,19 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { File } from '../../files/entities';
-import { FamilyMember } from '../../family/entities';
 
 @Entity('user')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column('text', { nullable: false, default: 'basic' })
+  subcription: string;
 
   @Column('text', { nullable: false })
   name: string;
@@ -45,15 +46,18 @@ export class User {
   @Column('text', { nullable: true })
   imageUrl: string;
 
+  @Column('text', { nullable: false, default: '' })
+  address: string;
+
+  @Column('text', { nullable: false, default: '' })
+  country: string;
+
+  @Column('text', { nullable: false, default: '' })
+  phoneNumber: string;
+
   @ManyToOne(() => File)
   @JoinColumn({ referencedColumnName: 'url' })
   image: File;
-
-  @OneToMany(() => FamilyMember, (familyMember) => familyMember.user)
-  family: FamilyMember[];
-
-  // @ManyToOne(() => Country, (country) => country.id, { eager: true })
-  // country: Country;
 
   @CreateDateColumn()
   createAt: string;

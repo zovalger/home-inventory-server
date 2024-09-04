@@ -7,34 +7,23 @@ import { ValidRoles } from '../interface/valid-roles';
 import { UserVerifiedGuard } from '../guards/user-verified/user-verified.guard';
 import { VerifiedUser } from './verified-user.decorator';
 
-import { FamilyRoles } from '../../family/interfaces';
-import { FamilyRoleProtected, MemberFamily } from '../../family/decorators';
-import { FamilyRoleGuard } from '../../family/guards/family-role/family-role.guard';
-
 interface Params {
   roles?: ValidRoles[];
   withoutVerification?: boolean;
-
-  familyRole?: FamilyRoles[];
-  withoutFamilyMember?: boolean;
 }
 
 export const Auth = (params?: Params) => {
   const {
     roles = [],
     withoutVerification = false,
-    familyRole = [],
-    withoutFamilyMember = false,
+    // familyRole = [],
+    // withoutFamilyMember = false,
   } = params || {};
 
   return applyDecorators(
     RoleProtected(...roles),
     VerifiedUser(withoutVerification),
 
-    // family
-    MemberFamily(withoutFamilyMember),
-    FamilyRoleProtected(familyRole),
-
-    UseGuards(AuthGuard(), UserRoleGuard, UserVerifiedGuard, FamilyRoleGuard),
+    UseGuards(AuthGuard(), UserRoleGuard, UserVerifiedGuard),
   );
 };

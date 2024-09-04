@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 
 import { User } from '../auth/entities';
-import { Family, FamilyMember } from './entities';
+import { Family, FamilyMember } from '../company/entities';
 
 import { Auth, GetUser } from '../auth/decorators';
 import { GetUserFamily, GetUserFamilyMember } from './decorators';
@@ -23,12 +23,12 @@ import {
   UpdateRoleMemberDto,
 } from './dto';
 
-import { FamilyService } from './family.service';
+import { FamilyService } from './company.service';
 import { ResMessages, ResponseBodyFormat } from '../common/providers';
 import { CreateFamilyPipe, UpdateFamilyPipe } from './pipes';
 
-@Controller('family')
-export class FamilyController {
+@Controller('company')
+export class CompanyController {
   constructor(
     private readonly resMessages: ResMessages,
     private readonly responseBodyFormat: ResponseBodyFormat,
@@ -38,43 +38,6 @@ export class FamilyController {
   // ************************************************************
   //                    gestion de familias
   // ************************************************************
-
-  @Post()
-  @Auth({ withoutFamilyMember: true })
-  async create(
-    @GetUser() user: User,
-    @Body(CreateFamilyPipe) createFamilyDto: CreateFamilyDto,
-  ) {
-    const family = await this.familyService.create(user, createFamilyDto);
-
-    return this.responseBodyFormat.basic(
-      this.resMessages.familyCreated,
-      family,
-    );
-  }
-
-  @Get()
-  @Auth()
-  myFamily(@GetUserFamily() family: Family) {
-    return this.responseBodyFormat.basic(
-      this.resMessages.familyObtained,
-      family,
-    );
-  }
-
-  @Patch()
-  @Auth({ familyRole: [FamilyRoles.ouwner] })
-  async update(
-    @GetUserFamily() userFamily: Family,
-    @Body(UpdateFamilyPipe) updateFamilyDto: UpdateFamilyDto,
-  ) {
-    const family = await this.familyService.update(userFamily, updateFamilyDto);
-
-    return this.responseBodyFormat.basic(
-      this.resMessages.familyUpdated,
-      family,
-    );
-  }
 
   // ************************************************************
   //                    gestion de miembros

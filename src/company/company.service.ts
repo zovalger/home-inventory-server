@@ -6,13 +6,14 @@ import {
   ErrorHandleProvider,
   ResMessages,
 } from '../common/providers';
-import { DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Company } from './entities';
 import { FilesService } from 'src/files/files.service';
 import { EmailService } from 'src/email/email.service';
 import { User } from 'src/auth/entities';
 import { QueryCompanyDto } from './dto';
+import { ValidRoles } from 'src/auth/interface/valid-roles';
 
 @Injectable()
 export class CompanyService {
@@ -63,14 +64,36 @@ export class CompanyService {
     }
   }
 
-  async findAll(queryCompanyLocationDto: QueryCompanyDto) {
-    const { limit, offset } = queryCompanyLocationDto;
+  async findAll(
+    queryCompanyLocationDto: QueryCompanyDto,
+    options: { user: User },
+  ) {
+    const { user } = options;
+    const { limit = 10, offset = 0, createById } = queryCompanyLocationDto;
 
-    return await this.companyRepository.find({
-      order: { name: 'DESC' },
-      take: limit,
-      skip: offset,
-    });
+    const companies = await this.companyRepository
+      .createQueryBuilder('company')
+      .where(
+        new Brackets((qb) => {
+          if (user.roles.includes(ValidRoles.admin)) {
+            if (createById) {
+              qb.where('company."createById"=:createById', {
+                createById,
+              });
+            }
+          } else {
+            qb.andWhere('company."createById"=:createById', {
+              createById: user.id,
+            });
+          }
+        }),
+      )
+      .orderBy({ name: 'ASC' })
+      .take(limit)
+      .skip(offset)
+      .getMany();
+
+    return companies;
   }
 
   async findOneById(id: string) {

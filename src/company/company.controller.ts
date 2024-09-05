@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Query,
+} from '@nestjs/common';
 
 import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
@@ -6,8 +14,8 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 import { Auth, GetUser } from 'src/auth/decorators';
 import { User } from '../auth/entities';
 import { ResMessages, ResponseBodyFormat } from '../common/providers';
-import { ValidRoles } from '../auth/interface/valid-roles';
 import { CreateCompanyPipe, UpdateCompanyPipe } from './pipes';
+import { QueryProductDto } from 'src/inventory/dto';
 
 @Controller('companies')
 export class CompanyController {
@@ -32,14 +40,14 @@ export class CompanyController {
   }
 
   @Get()
-  async findOneByUser(@GetUser() user: User) {
-    return await this.companyService.findOneByUser(user.id);
-  }
-
-  @Get('all')
-  @Auth({ roles: [ValidRoles.admin] })
-  async findAll() {
-    const companies = await this.companyService.findAll();
+  @Auth()
+  async findAll(
+    @Query() queryProductDto: QueryProductDto,
+    @GetUser() user: User,
+  ) {
+    const companies = await this.companyService.findAll(queryProductDto, {
+      user,
+    });
 
     return this.responseBodyFormat.basic(
       this.resMessages.familyObtained,

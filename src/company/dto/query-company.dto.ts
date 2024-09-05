@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { Transform } from 'class-transformer';
 
@@ -8,4 +8,8 @@ export class QueryCompanyDto extends PaginationDto {
   @Transform(({ value }) => value.trim().toUpperCase())
   @MinLength(1)
   name?: string;
+
+  @IsOptional()
+  @IsUUID()
+  createById?: string;
 }

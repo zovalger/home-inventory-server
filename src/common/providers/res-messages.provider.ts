@@ -45,7 +45,14 @@ export class ResMessages {
   verifyCodeResend = (email: string) =>
     `forwarded verification code to email ${email}`;
 
-  // ************************** family **************************
+  // ************************** company **************************
+
+  companyNotFound = 'companyNotFound';
+  companyAlreadyExist = 'companyAlreadyExist';
+
+  companyCreated = 'companyCreated';
+  companiesObtained = 'companiesObtained';
+  companyUpdated = 'companyUpdated';
 
   userAlreadyInFamilyGroup = 'The user already has a family group';
 
@@ -56,9 +63,8 @@ export class ResMessages {
     'The user not has permission in family group for this action';
 
   // confirmations
-  familyCreated = 'group family are created succesfully';
+
   familyObtained = 'family data obtained';
-  familyUpdated = 'group family are updated succesfully';
 
   // ************************** members **************************
 

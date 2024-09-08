@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import { CreateUserEmailDto, SendEmailInviteUserDto } from './dto';
+import {
+  CreateUserEmailDto,
+  // SendEmailInviteUserDto
+} from './dto';
 
 import { EmailTemplates } from './providers/email-templates';
 import { EmailSender } from './providers/email-sender';
@@ -29,26 +32,26 @@ export class EmailService {
     await this.emailSender.send(user.email, subject, html);
   }
 
-  async sendEmail_InviteUsers(SendEmailInviteUserDto: SendEmailInviteUserDto) {
-    if (this.isTestingMode()) return;
+  // async sendEmail_InviteUsers(SendEmailInviteUserDto: SendEmailInviteUserDto) {
+  //   if (this.isTestingMode()) return;
 
-    const { familyName, createByUserName, invitations } =
-      SendEmailInviteUserDto;
+  //   const { familyName, createByUserName, invitations } =
+  //     SendEmailInviteUserDto;
 
-    for (const invitation of invitations) {
-      try {
-        const { guestEmail } = invitation;
+  //   for (const invitation of invitations) {
+  //     try {
+  //       const { guestEmail } = invitation;
 
-        const { subject, html } = this.emailTemplates.inviteUserToMember(
-          createByUserName,
-          familyName,
-          invitation,
-        );
+  //       const { subject, html } = this.emailTemplates.inviteUserToMember(
+  //         createByUserName,
+  //         familyName,
+  //         invitation,
+  //       );
 
-        await this.emailSender.send(guestEmail, subject, html);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  }
+  //       await this.emailSender.send(guestEmail, subject, html);
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   }
+  // }
 }

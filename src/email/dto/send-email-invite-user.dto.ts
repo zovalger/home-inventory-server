@@ -1,7 +1,7 @@
-import { FamilyInvitationDto } from '../../family/dto/create-family-invitations.dto';
+// import { FamilyInvitationDto } from '../../family/dto/create-family-invitations.dto';
 
-export class SendEmail_InviteUserToFamilyGroupDto {
-  createByUserName: string;
-  familyName: string;
-  invitations: FamilyInvitationDto[];
-}
+// export class SendEmail_InviteUserToFamilyGroupDto {
+//   createByUserName: string;
+//   familyName: string;
+//   invitations: FamilyInvitationDto[];
+// }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -9,6 +9,12 @@ import {
   UpdateCompanyLocationDto,
 } from './dto';
 import { StatusObject } from 'src/common/interfaces';
+import { isAdmin } from 'src/auth/helpers/is-admin';
+import { User } from 'src/auth/entities';
+
+interface options {
+  user: User;
+}
 
 @Injectable()
 export class CompanyLocationsService {
@@ -54,18 +60,19 @@ export class CompanyLocationsService {
     return location;
   }
 
-  async archive(id: string) {
+  async archive(id: string, options: options) {
+    const { user } = options;
+
     const location = await this.companyLocationRepository.preload({
       id,
       status: StatusObject.archive,
     });
 
+    if (!isAdmin(user) && location.createById != user.id)
+      throw new ForbiddenException();
+
     await this.companyLocationRepository.save(location);
 
     return location;
   }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} companyLocation`;
-  // }
 }

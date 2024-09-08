@@ -5,7 +5,6 @@ import { File } from './entities';
 
 import { CommonModule } from '../common/common.module';
 import { AuthModule } from '../auth/auth.module';
-import { FamilyModule } from '../family/family.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { FilesService } from './files.service';
 import { FilesController } from './files.controller';
@@ -14,7 +13,7 @@ import { FilesController } from './files.controller';
   imports: [
     CommonModule,
     forwardRef(() => AuthModule),
-    forwardRef(() => FamilyModule),
+    // forwardRef(() => FamilyModule),
     CloudinaryModule,
     TypeOrmModule.forFeature([File]),
   ],

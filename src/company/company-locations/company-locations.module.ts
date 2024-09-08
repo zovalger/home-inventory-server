@@ -3,9 +3,10 @@ import { CompanyLocationsService } from './company-locations.service';
 import { CompanyLocationsController } from './company-locations.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompanyLocation } from './entities';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CompanyLocation])],
+  imports: [AuthModule, TypeOrmModule.forFeature([CompanyLocation])],
   controllers: [CompanyLocationsController],
   providers: [CompanyLocationsService],
   exports: [CompanyLocationsService],

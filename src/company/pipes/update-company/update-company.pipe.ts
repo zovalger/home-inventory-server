@@ -5,13 +5,16 @@ import { UpdateCompanyDto } from 'src/company/dto/update-company.dto';
 export class UpdateCompanyPipe implements PipeTransform {
   transform(value: UpdateCompanyDto) {
     const name = value.name ? value.name.trim() : undefined;
-
-    // const imageUrl = value.imageUrl ? value.imageUrl : null;
+    const rif_prefix = value.rif_prefix ? value.rif_prefix.trim() : undefined;
+    const rif_number = value.rif_number ? value.rif_number.trim() : undefined;
+    const address = value.address ? value.address.trim() : undefined;
 
     return {
       ...value,
       name,
-      // imageUrl
+      rif_prefix,
+      rif_number,
+      address,
     };
   }
 }

@@ -8,8 +8,6 @@ import { JoiValidationsSchema } from './config/joi.validation';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { EmailModule } from './email/email.module';
-import { FilesModule } from './files/files.module';
-import { InventoryModule } from './inventory/inventory.module';
 import { CompanyModule } from './company/company.module';
 
 @Module({
@@ -32,17 +30,15 @@ import { CompanyModule } from './company/company.module';
       synchronize: process.env.NODE_ENV != 'production',
     }),
 
+    AuthModule,
+    CommonModule,
     EmailModule,
 
-    AuthModule,
-
-    CommonModule,
-
-    FilesModule,
-
-    InventoryModule,
-
     CompanyModule,
+
+    // FilesModule,
+
+    // InventoryModule,
   ],
   controllers: [],
   providers: [],

@@ -204,7 +204,7 @@ describe('FamilyModule (e2e)', () => {
             usersAndToken[0].user.id,
           );
 
-          expect(body.message).toBe(resMessage.familyCreated);
+          expect(body.message).toBe(resMessage.companyCreated);
           expect(body.data).toEqual(family);
 
           const member = await familyMemberRepository.findOneBy({
@@ -237,7 +237,7 @@ describe('FamilyModule (e2e)', () => {
             usersAndToken[0].user.id,
           );
 
-          expect(body.message).toBe(resMessage.familyCreated);
+          expect(body.message).toBe(resMessage.companyCreated);
           expect(body.data).toEqual(family);
 
           const member = await familyMemberRepository.findOneBy({
@@ -388,7 +388,7 @@ describe('FamilyModule (e2e)', () => {
               .send({ name: null })
               .expect(200);
 
-            expect(res.body.message).toBe(resMessage.familyUpdated);
+            expect(res.body.message).toBe(resMessage.companyUpdated);
           });
 
           it('with image', async () => {
@@ -413,7 +413,7 @@ describe('FamilyModule (e2e)', () => {
               usersAndToken[0].user.id,
             );
 
-            expect(body.message).toBe(resMessage.familyUpdated);
+            expect(body.message).toBe(resMessage.companyUpdated);
             expect(body.data).toEqual(family);
           });
 
@@ -445,7 +445,7 @@ describe('FamilyModule (e2e)', () => {
               usersAndToken[0].user.id,
             );
 
-            expect(body.message).toBe(resMessage.familyUpdated);
+            expect(body.message).toBe(resMessage.companyUpdated);
             expect(body.data.imageUrl).toBeNull();
             expect(family.imageUrl).toBeNull();
           });

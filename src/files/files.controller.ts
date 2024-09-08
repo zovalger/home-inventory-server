@@ -27,7 +27,7 @@ export class FilesController {
 
   //todo: validar que el archivo no sea mayor a 480px
   @Post('upload')
-  @Auth({ withoutFamilyMember: true })
+  @Auth()
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
     @GetUser() user: User,
@@ -50,7 +50,7 @@ export class FilesController {
   }
 
   @Delete(':id')
-  @Auth({ withoutFamilyMember: true })
+  @Auth()
   delete(@Param('id') id: string, @GetUser() user: User) {
     return this.filesService.deleteImage(id, user);
   }

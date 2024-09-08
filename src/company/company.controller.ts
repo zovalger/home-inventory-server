@@ -15,7 +15,7 @@ import { Auth, GetUser } from 'src/auth/decorators';
 import { User } from '../auth/entities';
 import { ResMessages, ResponseBodyFormat } from '../common/providers';
 import { CreateCompanyPipe, UpdateCompanyPipe } from './pipes';
-import { QueryProductDto } from 'src/inventory/dto';
+import { QueryCompanyDto } from './dto';
 
 @Controller('companies')
 export class CompanyController {
@@ -31,10 +31,10 @@ export class CompanyController {
     @GetUser() user: User,
     @Body(CreateCompanyPipe) createFamilyDto: CreateCompanyDto,
   ) {
-    const company = await this.companyService.create(createFamilyDto, user);
+    const company = await this.companyService.create(createFamilyDto, { user });
 
     return this.responseBodyFormat.basic(
-      this.resMessages.familyCreated,
+      this.resMessages.companyCreated,
       company,
     );
   }
@@ -42,7 +42,7 @@ export class CompanyController {
   @Get()
   @Auth()
   async findAll(
-    @Query() queryProductDto: QueryProductDto,
+    @Query() queryProductDto: QueryCompanyDto,
     @GetUser() user: User,
   ) {
     const companies = await this.companyService.findAll(queryProductDto, {
@@ -50,15 +50,15 @@ export class CompanyController {
     });
 
     return this.responseBodyFormat.basic(
-      this.resMessages.familyObtained,
+      this.resMessages.companiesObtained,
       companies,
     );
   }
 
   @Get(':id')
   @Auth()
-  async findOneById(@Param('id') id: string) {
-    const company = await this.companyService.findOneById(id);
+  async findOneById(@Param('id') id: string, @GetUser() user: User) {
+    const company = await this.companyService.findOne(id, { user });
 
     return company;
   }
@@ -68,17 +68,21 @@ export class CompanyController {
   async update(
     @Param('id') id: string,
     @Body(UpdateCompanyPipe) updateCompanyDto: UpdateCompanyDto,
+    @GetUser() user: User,
   ) {
-    const company = await this.companyService.update(id, updateCompanyDto);
+    const company = await this.companyService.update(id, updateCompanyDto, {
+      user,
+    });
 
     return this.responseBodyFormat.basic(
-      this.resMessages.familyUpdated,
+      this.resMessages.companyUpdated,
       company,
     );
   }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.companyService.remove(+id);
-  // }
+  @Patch(':id/archive')
+  @Auth()
+  archive(@Param('id') id: string, @GetUser() user: User) {
+    return this.companyService.archive(id, { user });
+  }
 }

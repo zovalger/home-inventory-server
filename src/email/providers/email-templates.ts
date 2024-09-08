@@ -4,9 +4,9 @@ import { CreateUserEmailDto } from '../dto';
 import {
   BasicEmailTemplate,
   CreateUserEmailTemplate,
-  InviteUserToMemberTemplate,
+  // InviteUserToMemberTemplate,
 } from '../templates';
-import { FamilyInvitationDto } from '../../family/dto';
+// import { FamilyInvitationDto } from '../../family/dto';
 
 interface EmailTemplate {
   subject: string;
@@ -29,21 +29,21 @@ export class EmailTemplates {
     return { subject, html };
   }
 
-  inviteUserToMember(
-    user: string,
-    familyName: string,
-    familyInvitationDto: FamilyInvitationDto,
-  ): EmailTemplate {
-    const body = InviteUserToMemberTemplate(
-      user,
-      familyName,
-      familyInvitationDto,
-    );
+  // inviteUserToMember(
+  //   user: string,
+  //   familyName: string,
+  //   familyInvitationDto: FamilyInvitationDto,
+  // ): EmailTemplate {
+  //   const body = InviteUserToMemberTemplate(
+  //     user,
+  //     familyName,
+  //     familyInvitationDto,
+  //   );
 
-    const html = this.basicEmail(body);
+  //   const html = this.basicEmail(body);
 
-    const subject = `Invitation of family group ${familyName} `;
+  //   const subject = `Invitation of family group ${familyName} `;
 
-    return { subject, html };
-  }
+  //   return { subject, html };
+  // }
 }

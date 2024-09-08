@@ -18,11 +18,9 @@ import { VerificationCodeService } from './verification-code/verification-code.s
 @Module({
   imports: [
     ConfigModule,
-    CommonModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
 
     TypeOrmModule.forFeature([User, UserVerificationCode]),
-
-    PassportModule.register({ defaultStrategy: 'jwt' }),
 
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -36,6 +34,7 @@ import { VerificationCodeService } from './verification-code/verification-code.s
     }),
 
     forwardRef(() => FilesModule),
+    CommonModule,
 
     EmailModule,
   ],

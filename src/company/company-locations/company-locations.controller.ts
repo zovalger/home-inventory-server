@@ -8,7 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 
-import { Auth } from '../../auth/decorators';
+import { Auth, GetUser } from '../../auth/decorators';
 
 import {
   CreateCompanyLocationDto,
@@ -17,6 +17,7 @@ import {
 } from './dto';
 
 import { CompanyLocationsService } from './company-locations.service';
+import { User } from 'src/auth/entities';
 
 @Controller('company-locations')
 export class CompanyLocationsController {
@@ -53,7 +54,7 @@ export class CompanyLocationsController {
 
   @Patch(':id/archive')
   @Auth()
-  archive(@Param('id') id: string) {
-    return this.companyLocationsService.archive(id);
+  archive(@Param('id') id: string, @GetUser() user: User) {
+    return this.companyLocationsService.archive(id, { user });
   }
 }

@@ -10,6 +10,7 @@ import {
 
 import { User } from '../../auth/entities';
 import { File } from '../../files/entities';
+import { StatusObject } from 'src/common/interfaces';
 
 @Entity('company')
 export class Company {
@@ -27,6 +28,9 @@ export class Company {
 
   @Column('text', { nullable: false })
   address: string;
+
+  @Column('text', { nullable: false, default: StatusObject.active })
+  status: StatusObject;
 
   @Column('text', { nullable: false })
   createById: string;

@@ -8,10 +8,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import { User } from '../../../auth/entities';
-import { File } from '../../../files/entities';
-import { Company } from '../../entities';
-import { StatusObject } from '../../../common/interfaces';
+import { User } from '../../auth/entities';
+import { File } from '../../files/entities';
+import { Company } from '../../company/entities';
+import { StatusObject } from '../../common/interfaces';
 import { ValidCompanyLocations } from '../interfaces';
 
 @Entity('company_location')

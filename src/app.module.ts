@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { EmailModule } from './email/email.module';
 import { CompanyModule } from './company/company.module';
+import { CompanyLocationsModule } from './company-locations/company-locations.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { CompanyModule } from './company/company.module';
     EmailModule,
 
     CompanyModule,
+    CompanyLocationsModule,
 
     // FilesModule,
 

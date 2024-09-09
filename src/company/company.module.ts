@@ -3,11 +3,10 @@ import { CompanyService } from './company.service';
 import { CompanyController } from './company.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Company } from './entities';
-import { CompanyLocationsModule } from './company-locations/company-locations.module';
-import { CommonModule } from 'src/common/common.module';
 import { FilesModule } from 'src/files/files.module';
 import { EmailModule } from 'src/email/email.module';
 import { AuthModule } from 'src/auth/auth.module';
+import { CommonModule } from 'src/common/common.module';
 
 @Module({
   imports: [
@@ -16,7 +15,6 @@ import { AuthModule } from 'src/auth/auth.module';
     AuthModule,
     FilesModule,
     EmailModule,
-    CompanyLocationsModule,
   ],
   controllers: [CompanyController],
   providers: [CompanyService],

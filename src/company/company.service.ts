@@ -195,4 +195,29 @@ export class CompanyService {
 
     return company;
   }
+
+  async unarchive(id: string, options: options) {
+    const { user } = options;
+
+    const company = await this.companyRepository.preload({
+      id,
+      status: StatusObject.active,
+    });
+
+    if (!isAdmin(user) && company.createById != user.id)
+      throw new ForbiddenException();
+
+    await this.companyRepository.save(company);
+
+    return company;
+  }
+
+  // utils
+
+  async isOuwnerOfCompany(companyId: string, userId: string): Promise<boolean> {
+    return await this.companyRepository.existsBy({
+      id: companyId,
+      createById: userId,
+    });
+  }
 }

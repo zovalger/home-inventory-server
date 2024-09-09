@@ -29,9 +29,11 @@ export class CompanyController {
   @Auth()
   async create(
     @GetUser() user: User,
-    @Body(CreateCompanyPipe) createFamilyDto: CreateCompanyDto,
+    @Body(CreateCompanyPipe) createCompanyDto: CreateCompanyDto,
   ) {
-    const company = await this.companyService.create(createFamilyDto, { user });
+    const company = await this.companyService.create(createCompanyDto, {
+      user,
+    });
 
     return this.responseBodyFormat.basic(
       this.resMessages.companyCreated,
@@ -80,9 +82,15 @@ export class CompanyController {
     );
   }
 
-  @Patch(':id/archive')
+  @Post(':id/archive')
   @Auth()
   archive(@Param('id') id: string, @GetUser() user: User) {
     return this.companyService.archive(id, { user });
+  }
+
+  @Post(':id/unarchive')
+  @Auth()
+  unarchive(@Param('id') id: string, @GetUser() user: User) {
+    return this.companyService.unarchive(id, { user });
   }
 }

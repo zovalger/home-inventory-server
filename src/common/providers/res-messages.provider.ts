@@ -49,22 +49,29 @@ export class ResMessages {
 
   companyNotFound = 'companyNotFound';
   companyAlreadyExist = 'companyAlreadyExist';
+  usetIsNotOuwnerOfCompany = 'usetIsNotOuwnerOfCompany';
 
   companyCreated = 'companyCreated';
   companiesObtained = 'companiesObtained';
   companyUpdated = 'companyUpdated';
 
-  userAlreadyInFamilyGroup = 'The user already has a family group';
+  // ************************** company locations **************************
 
-  familyNotFound = 'Family not found';
-  userForbiddenToFamily = 'The user is forbidden for this family';
-  userUnauthorizedToFamily = "The user isn't authorized for this family";
-  userNotHavePermisionInFamily =
-    'The user not has permission in family group for this action';
+  companyLocationNotFound = 'companyLocationNotFound';
 
-  // confirmations
+  companyLocationHasCreated = 'companyLocationHasCreated';
 
-  familyObtained = 'family data obtained';
+  // userAlreadyInFamilyGroup = 'The user already has a family group';
+
+  // familyNotFound = 'Family not found';
+  // userForbiddenToFamily = 'The user is forbidden for this family';
+  // userUnauthorizedToFamily = "The user isn't authorized for this family";
+  // userNotHavePermisionInFamily =
+  //   'The user not has permission in family group for this action';
+
+  // // confirmations
+
+  // familyObtained = 'family data obtained';
 
   // ************************** members **************************
 

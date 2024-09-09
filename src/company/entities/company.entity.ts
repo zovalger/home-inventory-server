@@ -4,6 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -11,6 +12,7 @@ import {
 import { User } from '../../auth/entities';
 import { File } from '../../files/entities';
 import { StatusObject } from 'src/common/interfaces';
+import { Product } from 'src/inventory/entities';
 
 @Entity('company')
 export class Company {
@@ -32,22 +34,25 @@ export class Company {
   @Column('text', { nullable: false, default: StatusObject.active })
   status: StatusObject;
 
-  @Column('text', { nullable: false })
-  createById: string;
-
-  @ManyToOne(() => User, (user) => user.id, { nullable: false })
-  createBy: User;
-
-  @Column('text', { nullable: true })
-  imageUrl: string;
-
-  @ManyToOne(() => File, { cascade: true })
-  @JoinColumn({ referencedColumnName: 'url' })
-  image?: File;
-
   @CreateDateColumn()
   createAt: string;
 
   @UpdateDateColumn()
   updateAt: string;
+
+  // ****************** relaciones ******************
+
+  @Column('text', { nullable: false })
+  createById: string;
+  @ManyToOne(() => User, (user) => user.id, { nullable: false })
+  createBy: User;
+
+  @OneToMany(() => Product, (product) => product.companyId)
+  products: Product[];
+
+  @Column('text', { nullable: true })
+  imageUrl: string;
+  @ManyToOne(() => File, { cascade: true })
+  @JoinColumn({ referencedColumnName: 'url' })
+  image?: File;
 }

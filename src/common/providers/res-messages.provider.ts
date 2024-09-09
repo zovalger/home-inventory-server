@@ -94,6 +94,8 @@ export class ResMessages {
 
   // ************************** products **************************
 
+  productCreated = 'productCreated';
+
   productAlreadyExist = 'the product already exist';
   productsNotFound = 'the one the products are not founds';
   productsAreDifferentFamily = 'The products are from different family groups';

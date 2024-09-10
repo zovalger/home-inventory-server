@@ -70,13 +70,13 @@ export class ProductTransactionsService {
         transactions =
           await this.createTransaction_sustract_by_queryRunner(params);
 
-      if (type == ProductTransactionType.unpacking)
-        transactions =
-          await this.createTransaction_unpacking_by_queryRunner(params);
-
       if (type == ProductTransactionType.transfer_out)
         transactions =
-          await this.createTransaction_unpacking_by_queryRunner(params);
+          await this.createTransaction_transfer_by_queryRunner(params);
+
+      // if (type == ProductTransactionType.unpacking)
+      //   transactions =
+      //     await this.createTransaction_unpacking_by_queryRunner(params);
 
       if (!transactions)
         throw new BadRequestException(this.resMessages.transactionFailed);
@@ -245,86 +245,83 @@ export class ProductTransactionsService {
     return [transferOut, transferIn, transactionRef];
   }
 
-  async createTransaction_unpacking_by_queryRunner(
-    transactionFuctionParams: TransactionFuctionParams,
-  ): Promise<ProductTransaction> {
-    const { createById, product, createProductTransactionDto, queryRunner } =
-      transactionFuctionParams;
-    const { currentQuantity } = product;
-    const { quantity, transactionRefId } = createProductTransactionDto;
+  // todo: unpaking
+  // async createTransaction_unpacking_by_queryRunner(
+  //   transactionFuctionParams: TransactionFuctionParams,
+  // ): Promise<ProductTransaction> {
+  //   const { createById, createProductTransactionDto, queryRunner } =
+  //     transactionFuctionParams;
 
-    const dataUnpacking = {
-      ...createProductTransactionDto,
-      productId: product.id,
-      createById,
-      type: ProductTransactionType.unpacking,
-    };
+  //   const { quantity, transactionRefId } = createProductTransactionDto;
 
-    const chiltProduct = await this.productsService.find_By_whereImFromOfTo(
-      product.id,
-    );
+  //   const transactionRef = await this.getTransaction_By_Id(transactionRefId);
 
-    const { equal } = chiltProduct.productEq_To;
+  //   if (
+  //     transactionRef.type != ProductTransactionType.add &&
+  //     transactionRef.type != ProductTransactionType.restock
+  //   )
+  //     throw new BadRequestException(this.resMessages.transactionRefInvalid);
 
-    const transactionRef = await this.getTransaction_By_Id(transactionRefId);
+  //   // todo: balance del hijo
 
-    if (
-      transactionRef.type != ProductTransactionType.add &&
-      transactionRef.type != ProductTransactionType.restock
-    )
-      throw new BadRequestException(this.resMessages.transactionRefInvalid);
+  //   const chiltProduct = await this.productsService.find_By_whereImFromOfTo(
+  //     product.id,
+  //   );
 
-    if (currentQuantity < quantity)
-      throw new BadRequestException(this.resMessages.NotHaveStock);
+  //   const { equal } = chiltProduct.productEq_To;
 
-    if (transactionRef.remainder < quantity)
-      throw new BadRequestException(this.resMessages.transactionNotHaveStock);
+  //   if (currentQuantity < quantity)
+  //     throw new BadRequestException(this.resMessages.NotHaveStock);
 
-    transactionRef.remainder -= quantity;
-    product.currentQuantity -= quantity;
+  //   if (transactionRef.remainder < quantity)
+  //     throw new BadRequestException(this.resMessages.transactionNotHaveStock);
 
-    const chilQuantity = quantity * equal;
-    chiltProduct.currentQuantity += chilQuantity;
+  //   transactionRef.remainder -= quantity;
+  //   product.currentQuantity -= quantity;
 
-    const newTransactionUnpacking =
-      this.productTransactionRepository.create(dataUnpacking);
+  //   const chilQuantity = quantity * equal;
+  //   chiltProduct.currentQuantity += chilQuantity;
 
-    await queryRunner.manager.save([
-      transactionRef,
-      product,
-      chiltProduct,
-      newTransactionUnpacking,
-    ]);
+  //   const newTransactionUnpacking = this.productTransactionRepository.create({
+  //     ...createProductTransactionDto,
+  //     productId: product.id,
+  //     createById,
+  //     type: ProductTransactionType.unpacking,
+  //   });
 
-    const dataRestock = {
-      quantity: chilQuantity,
-      remainder: chilQuantity,
-      transactionRefId: newTransactionUnpacking.id,
-      productId: chiltProduct.id,
-      createById,
-      type: ProductTransactionType.restock,
-    };
+  //   await queryRunner.manager.save([
+  //     transactionRef,
+  //     product,
+  //     chiltProduct,
+  //     newTransactionUnpacking,
+  //   ]);
 
-    const newTransactionRestock =
-      this.productTransactionRepository.create(dataRestock);
+  //   const dataRestock = {
+  //     quantity: chilQuantity,
+  //     remainder: chilQuantity,
+  //     transactionRefId: newTransactionUnpacking.id,
+  //     productId: chiltProduct.id,
+  //     createById,
+  //     type: ProductTransactionType.restock,
+  //   };
 
-    await queryRunner.manager.save(newTransactionRestock);
+  //   const newTransactionRestock =
+  //     this.productTransactionRepository.create(dataRestock);
 
-    await this.productEquivalencesService.calculateRelativeQuantity_by_queryRunner(
-      product.id,
-      queryRunner,
-    );
+  //   await queryRunner.manager.save(newTransactionRestock);
 
-    return newTransactionUnpacking;
-  }
+  //   await this.productEquivalencesService.calculateRelativeQuantity_by_queryRunner(
+  //     product.id,
+  //     queryRunner,
+  //   );
 
-  async getTransaction_By_Id(
-    transactionId: string,
-    relations?: { product?: boolean; transactionRef?: boolean },
-  ) {
+  //   return newTransactionUnpacking;
+  // }
+
+  async getTransaction_By_Id(id: string) {
     const transaction = this.productTransactionRepository.findOne({
-      where: { id: transactionId },
-      relations,
+      where: { id },
+      // relations,
     });
 
     if (!transaction)
@@ -335,26 +332,39 @@ export class ProductTransactionsService {
 
   async getTransactions(
     queryTransactionDto: QueryTransactionDto,
-    { userFamily }: Pick<AllUserData, 'userFamily'>,
+    options: UserOptions,
   ) {
-    const { limit = 10, offset = 0, type, productId } = queryTransactionDto;
+    const {
+      limit = 10,
+      offset = 0,
+      type,
+      productId,
+      companyId,
+      companyLocationId,
+    } = queryTransactionDto;
 
     const transactions = await this.productTransactionRepository
       .createQueryBuilder('tr')
-      .innerJoinAndSelect('tr.product', 'product')
-      .where('product.familyId=:familyId', {
-        familyId: userFamily.id,
+      .innerJoinAndSelect('tr.product_balance', 'product_balance')
+      .innerJoinAndSelect('product_balance.product', 'product')
+      .where('product."companyId"=:companyId', {
+        companyId,
       })
       .andWhere(
         new Brackets((qb) => {
-          if (type)
-            qb.andWhere('tr.type=:type', {
-              type,
+          if (companyLocationId)
+            qb.andWhere('tr."companyLocationId"=:companyLocationId', {
+              companyLocationId,
             });
 
           if (productId)
             qb.andWhere('tr."productId"=:productId', {
               productId,
+            });
+
+          if (type)
+            qb.andWhere('tr.type=:type', {
+              type,
             });
         }),
       )
@@ -364,14 +374,9 @@ export class ProductTransactionsService {
       .getMany();
 
     return transactions;
-
-    // await this.getProduct(productId, { userFamily });
-    // const transaction = this.productTransactionRepository.find({
-    //   where: { productId: productId },
-    //   order: { createAt: 'ASC' },
-    // });
-    // return transaction;
   }
+
+  // todo: refactory
 
   async deleteTransaction(
     transactionId: string,

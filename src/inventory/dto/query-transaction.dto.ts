@@ -11,4 +11,12 @@ export class QueryTransactionDto extends PaginationDto {
   @IsOptional()
   @IsUUID()
   productId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  companyLocationId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  companyId?: string;
 }

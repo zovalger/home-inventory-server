@@ -12,7 +12,6 @@ import {
 import { User } from '../../auth/entities';
 import { ProductEquivalence } from './product-equivalence.entity';
 import { UnitOfMeasurement } from '../interfaces';
-import { ProductTransaction } from './product-transaction.entity';
 import { Company } from 'src/company/entities';
 import { StatusObject } from 'src/common/interfaces';
 import { ProductBalance } from './product-balance.entity';
@@ -68,9 +67,6 @@ export class Product {
 
   @Column('text', { nullable: true })
   imageUrl: string;
-
-  @OneToMany(() => ProductTransaction, (transaction) => transaction.productId)
-  transactions: ProductTransaction[];
 
   @OneToMany(() => ProductBalance, (productBalance) => productBalance.productId)
   balances: ProductBalance[];

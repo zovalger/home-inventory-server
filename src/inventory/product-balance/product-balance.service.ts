@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductBalance } from '../entities';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
@@ -21,39 +25,70 @@ export class ProductBalanceService {
     private readonly dataSource: DataSource,
 
     @InjectRepository(ProductBalance)
-    private readonly productBalance: Repository<ProductBalance>,
+    private readonly productBalanceRepository: Repository<ProductBalance>,
   ) {}
 
-  create(search: Search, options: Options): Promise<ProductBalance> {}
+  async create(search: Search): Promise<ProductBalance> {
+    const balance = await this.productBalanceRepository.create({ ...search });
 
-  find(search: Search): Promise<ProductBalance> {}
+    await this.productBalanceRepository.save(balance);
 
-  findById(balanceId: string): Promise<ProductBalance> {}
+    return balance;
+  }
 
-  add(
+  async findOne(search: Search): Promise<ProductBalance> {
+    return (
+      (await this.productBalanceRepository.findOneBy(search)) ||
+      (await this.create(search))
+    );
+  }
+
+  async findById(id: string): Promise<ProductBalance> {
+    const balance = await this.productBalanceRepository.findOneBy({ id });
+
+    if (!balance) throw new NotFoundException();
+
+    return balance;
+  }
+
+  async add(
     quantity: number,
     search: Search,
     options: Options,
   ): Promise<ProductBalance> {
+    const { queryRunner } = options;
 
+    const balance = await this.findOne(search);
+
+    balance.quantity += quantity;
+
+    await queryRunner.manager.save(balance);
+
+    return balance;
 
     // todo: calcular las cuentas relativas
-
-
-    await this.productEquivalencesService.calculateRelativeQuantity_by_queryRunner(
-      product.id,
-      queryRunner,
-    );
-
-    if (currentQuantity < quantity)
-      throw new BadRequestException(this.resMessages.NotHaveStock);
-
-
+    // await this.productEquivalencesService.calculateRelativeQuantity_by_queryRunner(
+    //   product.id,
+    //   queryRunner,
+    // );
   }
 
-  subtract(
+  async subtract(
     quantity: number,
     search: Search,
     options: Options,
-  ): Promise<ProductBalance> {}
+  ): Promise<ProductBalance> {
+    const { queryRunner } = options;
+
+    const balance = await this.findOne(search);
+
+    if (balance.quantity < quantity)
+      throw new BadRequestException(this.resMessages.NotHaveStock);
+
+    balance.quantity -= quantity;
+
+    await queryRunner.manager.save(balance);
+
+    return balance;
+  }
 }

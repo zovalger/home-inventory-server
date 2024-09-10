@@ -6,7 +6,6 @@ import {
   Query,
   Patch,
   Param,
-  Delete,
 } from '@nestjs/common';
 
 import { User } from '../../auth/entities';
@@ -52,39 +51,31 @@ export class ProductsController {
 
   @Get(':productId')
   @Auth()
-  findOne(@Param('productId') id: string, @GetUserFamily() userFamily: Family) {
-    return this.productsService.getProduct(id, { userFamily });
+  findOne(@Param('productId') id: string, @GetUser() user: User) {
+    return this.productsService.findById(id, { user });
   }
 
   @Patch(':productId')
-  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
+  @Auth()
   update(
     @Param('productId') productId: string,
     @Body() updateProductDto: UpdateProductDto,
-    @GetUserFamily() userFamily: Family,
+    @GetUser() user: User,
   ) {
     return this.productsService.update(productId, updateProductDto, {
-      userFamily,
+      user,
     });
   }
 
-  @Delete(':productId')
-  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
-  moveToTrash(
-    @Param('productId') productId: string,
-    @GetUser() user: User,
-    @GetUserFamily() userFamily: Family,
-  ) {
-    return this.productsService.moveToArchive(productId, { userFamily });
+  @Post(':id/archive')
+  @Auth()
+  archive(@Param('id') id: string, @GetUser() user: User) {
+    return this.productsService.archive(id, { user });
   }
 
-  @Post(':productId/unarchived')
-  @Auth({ familyRole: [FamilyRoles.ouwner, FamilyRoles.admin] })
-  unarchived(
-    @Param('productId') productId: string,
-    @GetUser() user: User,
-    @GetUserFamily() userFamily: Family,
-  ) {
-    return this.productsService.unarchived(productId, { userFamily });
+  @Post(':id/unarchive')
+  @Auth()
+  unarchive(@Param('id') id: string, @GetUser() user: User) {
+    return this.productsService.unarchive(id, { user });
   }
 }

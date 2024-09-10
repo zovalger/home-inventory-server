@@ -15,6 +15,7 @@ import { UnitOfMeasurement } from '../interfaces';
 import { ProductTransaction } from './product-transaction.entity';
 import { Company } from 'src/company/entities';
 import { StatusObject } from 'src/common/interfaces';
+import { ProductBalance } from './product-balance.entity';
 
 @Entity('product')
 export class Product {
@@ -70,6 +71,9 @@ export class Product {
 
   @OneToMany(() => ProductTransaction, (transaction) => transaction.productId)
   transactions: ProductTransaction[];
+
+  @OneToMany(() => ProductBalance, (productBalance) => productBalance.productId)
+  balances: ProductBalance[];
 
   // @ManyToOne(() => File, { cascade: true })
   // @JoinColumn({ referencedColumnName: 'url' })

@@ -128,8 +128,13 @@ export class ProductsService {
     return products;
   }
 
-  async findById(id: string) {
-    const product = await this.productRepository.findOneBy({ id });
+  async findById(id: string, options: options) {
+    options;
+
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: { balances: true },
+    });
 
     if (!product)
       throw new NotFoundException(this.resMessages.productsNotFound);

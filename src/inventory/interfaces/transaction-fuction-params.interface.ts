@@ -1,17 +1,16 @@
 import { QueryRunner } from 'typeorm';
 
 import { CreateProductTransactionDto } from '../dto';
-import { Product, ProductTransaction } from '../entities';
+import { ProductTransaction } from '../entities';
 
 export interface TransactionFuctionParams {
-  createById: string;
-  product: Product;
   createProductTransactionDto: CreateProductTransactionDto;
+  createById: string;
   queryRunner: QueryRunner;
 }
 
 export interface DeleteTransactionFuctionParams {
   transaction: ProductTransaction;
-  product: Product;
+  createById: string;
   queryRunner: QueryRunner;
 }

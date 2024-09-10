@@ -2,15 +2,16 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { Product } from './product.entity';
 import { User } from '../../auth/entities';
-
 import { ProductTransactionType } from '../interfaces';
+import { ProductBalance } from './product-balance.entity';
+import { StatusObject } from 'src/common/interfaces';
 
 @Entity('product_transaction')
 export class ProductTransaction {
@@ -23,36 +24,35 @@ export class ProductTransaction {
   @Column('float', { nullable: false, default: 1 })
   quantity: number;
 
-  // automatico
   @Column('float', { nullable: true, default: null })
   remainder: number;
 
   @Column('date', { nullable: true })
   expirationDate: string;
 
-  // ****************** llaves foraneas ******************
+  @Column('text', { nullable: false, default: StatusObject.active })
+  status: StatusObject;
 
   @Column('text', { nullable: false })
-  productId: string;
+  productBalanceId: string;
+
+  @ManyToOne(() => ProductBalance, (balance) => balance.id, { nullable: false })
+  @JoinColumn()
+  productBalance: string;
 
   @Column('text', { nullable: true })
   transactionRefId: string;
 
+  @ManyToOne(() => ProductTransaction)
+  @JoinColumn()
+  transactionRef: ProductTransaction;
+
   @Column('text', { nullable: false })
   createById: string;
 
-  // ****************** relaciones ******************
-
-  @ManyToOne(() => Product, (product) => product.transactions)
-  product: Product;
-
-  @ManyToOne(() => ProductTransaction)
-  transactionRef: ProductTransaction;
-
   @ManyToOne(() => User, (user) => user.id, { nullable: false })
+  @JoinColumn()
   createBy: User;
-
-  // ****************** automaticas ******************
 
   @CreateDateColumn()
   createAt: string;

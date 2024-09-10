@@ -10,7 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ProductTransaction } from '../entities';
 
 import { CreateProductTransactionDto, QueryTransactionDto } from '../dto';
-import { AllUserData } from '../../common/interfaces';
+import { AllUserData, UserOptions } from '../../common/interfaces';
 import {
   DeleteTransactionFuctionParams,
   ProductTransactionType,
@@ -19,8 +19,8 @@ import {
 
 import { ErrorHandleProvider, ResMessages } from '../../common/providers';
 import { ProductEquivalencesService } from '../product-equivalences/product-equivalences.service';
-import { ProductsService } from '../products/products.service';
-import { FamilyRoles } from '../../family/interfaces';
+// import { ProductsService } from '../products/products.service';
+import { ProductBalanceService } from '../product-balance/product-balance.service';
 
 @Injectable()
 export class ProductTransactionsService {
@@ -29,11 +29,13 @@ export class ProductTransactionsService {
     private readonly errorHandleProvider: ErrorHandleProvider,
     private readonly dataSource: DataSource,
 
-    private readonly productsService: ProductsService,
+    // private readonly productsService: ProductsService,
     private readonly productEquivalencesService: ProductEquivalencesService,
 
     @InjectRepository(ProductTransaction)
     private readonly productTransactionRepository: Repository<ProductTransaction>,
+
+    private readonly productBalanceService: ProductBalanceService,
   ) {}
 
   // ************************************************************
@@ -41,50 +43,48 @@ export class ProductTransactionsService {
   // ************************************************************
 
   async createTransaction(
-    productId: string,
     createProductTransactionDto: CreateProductTransactionDto,
-    { user, userFamily }: Pick<AllUserData, 'user' | 'userFamily'>,
+    options: UserOptions,
   ) {
+    const { user } = options;
     const { type } = createProductTransactionDto;
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const product = await this.productsService.findById(productId);
-
-    if (product.familyId != userFamily.id)
-      throw new ForbiddenException(this.resMessages.userForbiddenToFamily);
-
     try {
-      let transaction = null;
+      let transactions = null;
 
       const params: TransactionFuctionParams = {
-        createById: user.id,
-        product,
         createProductTransactionDto,
+        createById: user.id,
         queryRunner,
       };
 
       // realizar operacion segun el tipo de transaccion
       if (type == ProductTransactionType.add)
-        transaction = await this.createTransaction_add_by_queryRunner(params);
+        transactions = await this.createTransaction_add_by_queryRunner(params);
 
       if (type == ProductTransactionType.subtract)
-        transaction =
+        transactions =
           await this.createTransaction_sustract_by_queryRunner(params);
 
       if (type == ProductTransactionType.unpacking)
-        transaction =
+        transactions =
           await this.createTransaction_unpacking_by_queryRunner(params);
 
-      if (!transaction)
+      if (type == ProductTransactionType.transfer_out)
+        transactions =
+          await this.createTransaction_unpacking_by_queryRunner(params);
+
+      if (!transactions)
         throw new BadRequestException(this.resMessages.transactionFailed);
 
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
-      return transaction as ProductTransaction;
+      return transactions as ProductTransaction[];
     } catch (error) {
       await queryRunner.commitTransaction();
       await queryRunner.release();
@@ -95,85 +95,154 @@ export class ProductTransactionsService {
 
   async createTransaction_add_by_queryRunner(
     transactionFuctionParams: TransactionFuctionParams,
-  ): Promise<ProductTransaction> {
-    const { createById, product, createProductTransactionDto, queryRunner } =
+  ): Promise<ProductTransaction[]> {
+    const { createById, createProductTransactionDto, queryRunner } =
       transactionFuctionParams;
 
-    const { currentQuantity } = product;
-    const { quantity } = createProductTransactionDto;
+    const { quantity, expirationDate, productId, companyLocationId } =
+      createProductTransactionDto;
 
-    const data = {
-      ...createProductTransactionDto,
-      productId: product.id,
+    const balance = await this.productBalanceService.add(
+      quantity,
+      {
+        companyLocationId,
+        productId,
+      },
+      { queryRunner },
+    );
+
+    const transaction = this.productTransactionRepository.create({
+      productBalanceId: balance.id,
+      quantity,
+      expirationDate,
       createById,
       type: ProductTransactionType.add,
       remainder: quantity,
-    };
+    });
 
-    const transaction = this.productTransactionRepository.create(data);
     await queryRunner.manager.save(transaction);
 
-    product.currentQuantity = currentQuantity + quantity;
-
-    await queryRunner.manager.save(product);
-
-    await this.productEquivalencesService.calculateRelativeQuantity_by_queryRunner(
-      product.id,
-      queryRunner,
-    );
-
-    return transaction;
+    return [transaction];
   }
+
   // sustract
 
   async createTransaction_sustract_by_queryRunner(
     transactionFuctionParams: TransactionFuctionParams,
-  ): Promise<ProductTransaction> {
-    const { createById, product, createProductTransactionDto, queryRunner } =
+  ): Promise<ProductTransaction[]> {
+    const { createById, createProductTransactionDto, queryRunner } =
       transactionFuctionParams;
 
-    const { currentQuantity } = product;
-    const { quantity, transactionRefId } = createProductTransactionDto;
-
-    const data = {
-      ...createProductTransactionDto,
-      productId: product.id,
-      createById,
-      type: ProductTransactionType.subtract,
-    };
+    const { quantity, transactionRefId, productId, companyLocationId } =
+      createProductTransactionDto;
 
     const transactionRef = await this.getTransaction_By_Id(transactionRefId);
-
-    if (currentQuantity < quantity)
-      throw new BadRequestException(this.resMessages.NotHaveStock);
 
     if (transactionRef.remainder < quantity)
       throw new BadRequestException(this.resMessages.transactionNotHaveStock);
 
     if (
       transactionRef.type != ProductTransactionType.add &&
-      transactionRef.type != ProductTransactionType.restock
+      transactionRef.type != ProductTransactionType.restock &&
+      transactionRef.type != ProductTransactionType.transfer_in
     )
       throw new BadRequestException(this.resMessages.transactionRefInvalid);
 
-    transactionRef.remainder -= quantity;
-    product.currentQuantity -= quantity;
-
-    const newTransactionSubtract =
-      this.productTransactionRepository.create(data);
-
-    await queryRunner.manager.save([
-      transactionRef,
-      newTransactionSubtract,
-      product,
-    ]);
-
-    await this.productEquivalencesService.calculateRelativeQuantity_by_queryRunner(
-      product.id,
-      queryRunner,
+    const balance = await this.productBalanceService.subtract(
+      quantity,
+      {
+        companyLocationId,
+        productId,
+      },
+      { queryRunner },
     );
 
-    return newTransactionSubtract;
+    transactionRef.remainder -= quantity;
+
+    await queryRunner.manager.save(transactionRef);
+
+    const transaction = this.productTransactionRepository.create({
+      productBalanceId: balance.id,
+      type: ProductTransactionType.subtract,
+      quantity,
+      transactionRefId,
+      createById,
+    });
+
+    await queryRunner.manager.save(transaction);
+
+    return [transaction, transactionRef];
+  }
+
+  async createTransaction_transfer_by_queryRunner(
+    transactionFuctionParams: TransactionFuctionParams,
+  ): Promise<ProductTransaction[]> {
+    const { createById, createProductTransactionDto, queryRunner } =
+      transactionFuctionParams;
+
+    const {
+      quantity,
+      transactionRefId,
+      productId,
+      companyLocationId,
+      toCompanyLocationId,
+    } = createProductTransactionDto;
+
+    const transactionRef = await this.getTransaction_By_Id(transactionRefId);
+
+    if (transactionRef.remainder < quantity)
+      throw new BadRequestException(this.resMessages.transactionNotHaveStock);
+
+    if (
+      transactionRef.type != ProductTransactionType.add &&
+      transactionRef.type != ProductTransactionType.restock &&
+      transactionRef.type != ProductTransactionType.transfer_in
+    )
+      throw new BadRequestException(this.resMessages.transactionRefInvalid);
+
+    const balance = await this.productBalanceService.subtract(
+      quantity,
+      {
+        companyLocationId,
+        productId,
+      },
+      { queryRunner },
+    );
+
+    transactionRef.remainder -= quantity;
+
+    await queryRunner.manager.save(transactionRef);
+
+    const transferOut = this.productTransactionRepository.create({
+      productBalanceId: balance.id,
+      type: ProductTransactionType.transfer_out,
+      quantity,
+      transactionRefId,
+      createById,
+    });
+
+    await queryRunner.manager.save(transferOut);
+
+    const otherBalance = await this.productBalanceService.add(
+      quantity,
+      {
+        companyLocationId: toCompanyLocationId,
+        productId,
+      },
+      { queryRunner },
+    );
+
+    const transferIn = this.productTransactionRepository.create({
+      productBalanceId: otherBalance.id,
+      type: ProductTransactionType.transfer_in,
+      quantity,
+      transactionRefId: transferOut.id,
+      createById,
+    });
+
+    await queryRunner.manager.save(transferIn);
+
+    return [transferOut, transferIn, transactionRef];
   }
 
   async createTransaction_unpacking_by_queryRunner(
